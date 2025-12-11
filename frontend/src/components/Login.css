@@ -1,0 +1,90 @@
+/* Full page center */
+.login-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background: #f3f4f6;
+  padding: 20px;
+}
+
+/* Card */
+.login-card {
+  width: 380px;
+  background: white;
+  padding: 35px;
+  border-radius: 14px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e5e7eb;
+  animation: fadeIn 0.5s ease;
+}
+
+/* Title */
+.login-title {
+  font-size: 28px;
+  text-align: center;
+  font-weight: 600;
+  margin-bottom: 25px;
+  color: #1f2937;
+}
+
+/* Form Label */
+.form-group label {
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+  display: block;
+}
+
+/* Inputs */
+.form-control {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  transition: all 0.2s ease;
+}
+
+.form-control:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0px 0px 0px 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+/* Space between fields */
+.form-group {
+  margin-bottom: 18px;
+}
+
+/* Login button */
+.login-btn {
+  width: 100%;
+  padding: 12px;
+  border-radius: 8px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  font-size: 16px;
+  font-weight: 600;
+  transition: 0.2s ease;
+}
+
+.login-btn:hover {
+  background: #1e40af;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* Simple fade animation */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
