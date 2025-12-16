@@ -20,8 +20,8 @@ function IQACHome() {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const [refNumber, setRefNumber] = useState("");
-  const [flowRoles, setFlowRoles] = useState([]);
+  const [refNumbers, setRefNumbers] = useState({}); // per request
+  const [workflows, setWorkflows] = useState({}); // per request
   const [comments, setComments] = useState({}); // comments per request
 
   const flowOptions = ["HOD", "PRINCIPAL", "DIRECTOR", "AO", "CEO"];
@@ -63,6 +63,8 @@ function IQACHome() {
   // ------------------------------------
   const handleApprove = async (id) => {
     const cmt = comments[id] || "";
+    const refNumber = refNumbers[id] || "";
+    const flowRoles = workflows[id] || [];
 
     // Reference number required
     if (refNumber.trim().length !== 8) {
@@ -86,8 +88,8 @@ function IQACHome() {
 
       // reset only for that card
       setComments((prev) => ({ ...prev, [id]: "" }));
-      setRefNumber("");
-      setFlowRoles([]);
+      setRefNumbers((prev) => ({ ...prev, [id]: "" }));
+      setWorkflows((prev) => ({ ...prev, [id]: [] }));
 
       loadRequests();
     } catch {
@@ -185,8 +187,13 @@ function IQACHome() {
                     type="text"
                     className="form-control mb-3"
                     maxLength="8"
-                    value={refNumber}
-                    onChange={(e) => setRefNumber(e.target.value)}
+                    value={refNumbers[req._id] || ""}
+                    onChange={(e) =>
+                      setRefNumbers((prev) => ({
+                        ...prev,
+                        [req._id]: e.target.value,
+                      }))
+                    }
                   />
 
                   {/* WORKFLOW ROLES */}
@@ -195,13 +202,17 @@ function IQACHome() {
                     <div key={r}>
                       <input
                         type="checkbox"
-                        checked={flowRoles.includes(r)}
+                        checked={(workflows[req._id] || []).includes(r)}
                         onChange={() =>
-                          setFlowRoles((prev) =>
-                            prev.includes(r)
-                              ? prev.filter((x) => x !== r)
-                              : [...prev, r]
-                          )
+                          setWorkflows((prev) => {
+                            const current = prev[req._id] || [];
+                            return {
+                              ...prev,
+                              [req._id]: current.includes(r)
+                                ? current.filter((x) => x !== r)
+                                : [...current, r],
+                            };
+                          })
                         }
                       />
                       <label className="ms-2">{r}</label>
