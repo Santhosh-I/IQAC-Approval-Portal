@@ -21,6 +21,10 @@ function StaffHome() {
   const [eventDate, setEventDate] = useState("");
   const [purpose, setPurpose] = useState("");
   const [report, setReport] = useState(null);
+  
+  // Rejection details modal state
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [selectedRejection, setSelectedRejection] = useState(null);
 
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -63,6 +67,41 @@ function StaffHome() {
     } catch {
       toast.error("Failed to load report");
     }
+  };
+
+  // ----------------------------------------
+  // VIEW REJECTION DETAILS
+  // ----------------------------------------
+  const handleViewRejection = (req) => {
+    // Find the rejection/recreate approval entry
+    const rejections = (req.approvals || []).filter(
+      (a) => a.status === "Recreated"
+    );
+    
+    // Extract who rejected from status if no approvals found
+    let rejectorRole = null;
+    const status = req.overallStatus || "";
+    const match = status.match(/^(\w+)\s+requested\s+recreation/i);
+    if (match) {
+      rejectorRole = match[1].toUpperCase();
+    }
+    
+    setSelectedRejection({
+      eventName: req.eventName,
+      eventDate: req.eventDate,
+      status: req.overallStatus,
+      rejections,
+      rejectorRole, // fallback if approvals array is empty
+    });
+    setShowRejectionModal(true);
+  };
+
+  // ----------------------------------------
+  // CHECK IF REQUEST IS REJECTED
+  // ----------------------------------------
+  const isRejected = (req) => {
+    const status = (req.overallStatus || "").toLowerCase();
+    return status.includes("recreation") || status.includes("rejected");
   };
 
   // ----------------------------------------
@@ -248,6 +287,17 @@ function StaffHome() {
               </button>
             )}
 
+            {/* VIEW REJECTION DETAILS (when request is rejected/recreated) */}
+            {isRejected(req) && (
+              <button
+                className="btn btn-danger btn-sm mt-2 w-100"
+                onClick={() => handleViewRejection(req)}
+                style={{ fontWeight: "bold" }}
+              >
+                 View Rejection Details
+              </button>
+            )}
+
             {/* GENERATE APPROVAL REPORT (only after completion) */}
             {isApproved && (
               <button
@@ -267,6 +317,113 @@ function StaffHome() {
           </div>
         );
       })}
+
+      {/* REJECTION DETAILS MODAL */}
+      {showRejectionModal && selectedRejection && (
+        <div
+          className="modal fade show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.6)", zIndex: 1050 }}
+          onClick={() => setShowRejectionModal(false)}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content border-0 shadow-lg">
+              {/* Header */}
+              <div className="modal-header" style={{ backgroundColor: "#dc3545", color: "white" }}>
+                <h5 className="modal-title fw-bold">
+                   Request Rejected / Recreation Required
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowRejectionModal(false)}
+                ></button>
+              </div>
+              
+              {/* Body */}
+              <div className="modal-body">
+                {/* Event Info */}
+                <div className="mb-3 p-3 rounded" style={{ backgroundColor: "#f8f9fa" }}>
+                  <h6 className="fw-bold text-dark mb-2"> Event Details</h6>
+                  <p className="mb-1"><b>Event Name:</b> {selectedRejection.eventName}</p>
+                  <p className="mb-0"><b>Event Date:</b> {selectedRejection.eventDate}</p>
+                </div>
+                
+                {/* Status */}
+                <div className="mb-3 p-3 rounded border border-danger" style={{ backgroundColor: "#fff5f5" }}>
+                  <h6 className="fw-bold text-danger mb-2">🚫 Current Status</h6>
+                  <p className="mb-0 fw-bold text-danger">{selectedRejection.status}</p>
+                </div>
+                
+                {/* Rejection Details */}
+                <div className="p-3 rounded" style={{ backgroundColor: "#fff3cd" }}>
+                  <h6 className="fw-bold text-dark mb-3"> Rejection / Recreation Details</h6>
+                  
+                  {selectedRejection.rejections && selectedRejection.rejections.length > 0 ? (
+                    // Show from approvals array
+                    selectedRejection.rejections.map((rej, idx) => (
+                      <div
+                        key={idx}
+                        className="card mb-2 border-0 shadow-sm"
+                      >
+                        <div className="card-body p-3">
+                          <div className="d-flex align-items-center mb-2">
+                            <span className="badge bg-danger me-2" style={{ fontSize: "0.9rem" }}>
+                              {rej.role}
+                            </span>
+                            <small className="text-muted">
+                              {new Date(rej.decidedAt).toLocaleString()}
+                            </small>
+                          </div>
+                          <div className="p-2 rounded" style={{ backgroundColor: "#f8f9fa" }}>
+                            <b>Reason:</b>{" "}
+                            {rej.comments ? (
+                              <span className="text-dark">{rej.comments}</span>
+                            ) : (
+                              <i className="text-muted">No reason provided</i>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  ) : selectedRejection.rejectorRole ? (
+                    // Fallback: show rejector from status
+                    <div className="card border-0 shadow-sm">
+                      <div className="card-body p-3">
+                        <div className="d-flex align-items-center mb-2">
+                          <span className="badge bg-danger me-2" style={{ fontSize: "0.9rem" }}>
+                            {selectedRejection.rejectorRole}
+                          </span>
+                          <small className="text-muted">Requested recreation</small>
+                        </div>
+                        <div className="p-2 rounded" style={{ backgroundColor: "#f8f9fa" }}>
+                          <i className="text-muted">
+                            Please contact {selectedRejection.rejectorRole} for detailed feedback.
+                          </i>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-muted mb-0">No detailed remarks available.</p>
+                  )}
+                </div>
+              </div>
+              
+              {/* Footer */}
+              <div className="modal-footer border-0">
+                <button
+                  className="btn btn-secondary px-4"
+                  onClick={() => setShowRejectionModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
