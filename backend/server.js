@@ -10,6 +10,7 @@ const fs = require("fs");
 
 const { S3Client, PutObjectCommand, GetObjectCommand } = require("@aws-sdk/client-s3");
 const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const htmlPdf = require("html-pdf-node");
 
 dotenv.config();
 
@@ -490,7 +491,7 @@ app.post("/api/requests/:id/action", async (req, res) => {
 });
 
 // ===============================
-// APPROVAL REPORT
+// APPROVAL REPORT (PDF)
 // ===============================
 app.get("/api/requests/:id/approval-letter", async (req, res) => {
   try {
@@ -506,45 +507,114 @@ app.get("/api/requests/:id/approval-letter", async (req, res) => {
 
         return `
         <tr>
-          <td>${r}</td>
-          <td>${
+          <td style="padding: 8px; border: 1px solid #ddd;">${r}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${
             a?.status === "Approved"
-              ? "✔"
+              ? "✔ Approved"
               : a?.status === "Recreated"
-              ? "↩"
+              ? "↩ Recreated"
               : "Pending"
           }</td>
-          <td>${a ? a.comments : "-"}</td>
-          <td>${a ? new Date(a.decidedAt).toLocaleString() : "-"}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${a ? a.comments : "-"}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${a ? new Date(a.decidedAt).toLocaleString() : "-"}</td>
         </tr>`;
       })
       .join("");
 
-    res.send(`
+    const htmlContent = `
+      <!DOCTYPE html>
       <html>
+      <head>
+        <style>
+          body {
+            font-family: Arial, sans-serif;
+            margin: 40px;
+            color: #333;
+          }
+          h2 {
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+            padding-bottom: 10px;
+          }
+          h3 {
+            color: #34495e;
+            margin-top: 20px;
+          }
+          p {
+            margin: 8px 0;
+            line-height: 1.6;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+          }
+          th {
+            background-color: #3498db;
+            color: white;
+            padding: 12px;
+            text-align: left;
+            border: 1px solid #ddd;
+          }
+          hr {
+            border: 0;
+            height: 1px;
+            background: #ddd;
+            margin: 20px 0;
+          }
+          .header {
+            text-align: center;
+            margin-bottom: 30px;
+          }
+        </style>
+      </head>
       <body>
-        <h2>Approval Report</h2>
+        <div class="header">
+          <h2>Event Approval Report</h2>
+        </div>
+        
         <h3>Reference No: ${doc.referenceNo || "-"}</h3>
         <h3>Event: ${doc.eventName}</h3>
         <p><b>Staff:</b> ${doc.staffName}</p>
         <p><b>Department:</b> ${doc.department}</p>
         <p><b>Event Date:</b> ${doc.eventDate}</p>
         <p><b>Purpose:</b> ${doc.purpose}</p>
+        <p><b>Status:</b> ${doc.overallStatus}</p>
+        
         <hr/>
         
-        <table border="1" cellpadding="7" cellspacing="0">
-          <tr>
-            <th>Role</th>
-            <th>Status</th>
-            <th>Comments</th>
-            <th>Date & Time</th>
-          </tr>
-          ${rows}
+        <h3>Approval Timeline</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Role</th>
+              <th>Status</th>
+              <th>Comments</th>
+              <th>Date & Time</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rows}
+          </tbody>
         </table>
-
       </body>
       </html>
-    `);
+    `;
+
+    // Generate PDF
+    const file = { content: htmlContent };
+    const options = { 
+      format: 'A4',
+      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
+    };
+
+    const pdfBuffer = await htmlPdf.generatePdf(file, options);
+
+    // Set headers for PDF download
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="Approval-Report-${doc.referenceNo || doc._id}.pdf"`);
+    res.send(pdfBuffer);
+
   } catch (e) {
     console.error(e);
     res.status(500).send("Server error");
