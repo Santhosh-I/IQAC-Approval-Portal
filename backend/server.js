@@ -39,28 +39,37 @@ const s3 = new S3Client({
 });
 
 // ===============================
-// MULTER TEMP STORAGE
+// MULTER MEMORY STORAGE
 // ===============================
-const upload = multer({ dest: "temp/" });
+const upload = multer({
+  storage: multer.memoryStorage(),
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    // Accept PDF files only
+    if (file.mimetype === "application/pdf") {
+      cb(null, true);
+    } else {
+      cb(new Error("Only PDF files are allowed"), false);
+    }
+  },
+});
 
 // ===============================
 // FUNCTION: Upload File to S3
 // ===============================
 async function uploadToS3(file) {
-  const fileStream = fs.createReadStream(file.path);
-
   const fileName = `reports/${Date.now()}_${file.originalname}`;
 
   const params = {
     Bucket: process.env.AWS_BUCKET,
     Key: fileName,
-    Body: fileStream,
+    Body: file.buffer, // Use buffer from memory storage
     ContentType: file.mimetype,
   };
 
   await s3.send(new PutObjectCommand(params));
-
-  fs.unlinkSync(file.path);
 
   return `https://${process.env.AWS_BUCKET}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
 }
