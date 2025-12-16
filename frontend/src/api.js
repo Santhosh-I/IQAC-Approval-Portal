@@ -112,6 +112,12 @@ export const adminUpdateHod = (department, data, role) =>
     headers: { "x-user-role": role },
   });
 
+// Delete/Unassign HOD
+export const adminDeleteHod = (department, role) =>
+  API.delete(`/admin/delete-hod/${department}`, {
+    headers: { "x-user-role": role },
+  });
+
 // Delete Request
 export const adminDeleteRequest = (id, role) =>
   API.delete(`/admin/delete-request/${id}`, {

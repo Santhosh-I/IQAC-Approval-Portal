@@ -618,6 +618,27 @@ app.put("/api/admin/update-hod/:department", requireAdmin, async (req, res) => {
   }
 });
 
+// 👉 Delete/Unassign HOD (Admin)
+app.delete("/api/admin/delete-hod/:department", requireAdmin, async (req, res) => {
+  try {
+    const deptParam = (req.params.department || "").toUpperCase();
+
+    const hod = await User.findOneAndDelete({
+      role: "HOD",
+      department: deptParam,
+    });
+
+    if (!hod) {
+      return res.status(404).json({ error: "No HOD found for this department" });
+    }
+
+    res.json({ message: "HOD unassigned successfully" });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 // 👉 Get all requests (Admin)
 app.get("/api/admin/all-requests", requireAdmin, async (req, res) => {
   try {

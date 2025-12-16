@@ -4,7 +4,8 @@ import {
   adminGetAllStaff, 
   adminDeleteStaff,
   adminGetDepartments,
-  adminGetHodByDepartment 
+  adminGetHodByDepartment,
+  adminDeleteHod 
 } from "../api";
 import { toast } from "react-toastify";
 
@@ -82,6 +83,20 @@ export default function AdminDashboard() {
 
   const handleEditHod = (department) => {
     navigate("/admin/add-hod", { state: { department } });
+  };
+
+  const handleUnassignHod = async (department) => {
+    if (!window.confirm(`Are you sure you want to unassign the HOD for ${department}? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      await adminDeleteHod(department, role);
+      toast.success(`HOD for ${department} unassigned successfully`);
+      loadHods();
+    } catch (err) {
+      toast.error("Failed to unassign HOD");
+    }
   };
 
   const logout = () => {
@@ -210,11 +225,19 @@ export default function AdminDashboard() {
                 </td>
                 <td>
                   <button
-                    className="btn btn-warning btn-sm"
+                    className="btn btn-warning btn-sm me-2"
                     onClick={() => handleEditHod(h.department)}
                   >
                     {h.hod ? "Edit" : "Assign"}
                   </button>
+                  {h.hod && (
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleUnassignHod(h.department)}
+                    >
+                      Unassign
+                    </button>
+                  )}
                 </td>
               </tr>
             ))}
