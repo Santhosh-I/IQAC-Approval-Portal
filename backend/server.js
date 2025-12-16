@@ -195,10 +195,68 @@ mongoose
     if (fixedCount.modifiedCount > 0) {
       console.log(`Fixed ${fixedCount.modifiedCount} requests by removing HOD from workflow`);
     }
+    
+    // Clean up trailing spaces in staff names
+    const allStaff = await Staff.find({});
+    let cleanedCount = 0;
+    for (const staff of allStaff) {
+      const trimmedName = staff.name.trim();
+      const trimmedPassword = staff.password.trim();
+      if (staff.name !== trimmedName || staff.password !== trimmedPassword) {
+        await Staff.updateOne(
+          { _id: staff._id },
+          { name: trimmedName, password: trimmedPassword }
+        );
+        cleanedCount++;
+      }
+    }
+    if (cleanedCount > 0) {
+      console.log(`Cleaned ${cleanedCount} staff records by trimming whitespace`);
+    }
   })
   .catch((err) => {
     console.error("MongoDB connection error:", err);
   });
+
+// ===============================
+// TEXT SIMILARITY FUNCTIONS
+// ===============================
+// Normalize text for comparison
+function normalizeText(text) {
+  return text.toLowerCase().trim().replace(/\s+/g, ' ');
+}
+
+// Calculate similarity between two strings (0 to 1)
+function calculateSimilarity(str1, str2) {
+  const norm1 = normalizeText(str1);
+  const norm2 = normalizeText(str2);
+  
+  // Exact match
+  if (norm1 === norm2) return 1.0;
+  
+  // Check if one contains the other
+  if (norm1.includes(norm2) || norm2.includes(norm1)) {
+    return 0.85;
+  }
+  
+  // Calculate word overlap
+  const words1 = norm1.split(' ');
+  const words2 = norm2.split(' ');
+  
+  const set1 = new Set(words1);
+  const set2 = new Set(words2);
+  
+  const intersection = new Set([...set1].filter(x => set2.has(x)));
+  const union = new Set([...set1, ...set2]);
+  
+  // Jaccard similarity
+  return intersection.size / union.size;
+}
+
+// Check if two texts are similar (threshold: 0.7 = 70% similar)
+function areTextsSimilar(text1, text2, threshold = 0.7) {
+  return calculateSimilarity(text1, text2) >= threshold;
+}
 
 // ===============================
 // SIMPLE ADMIN MIDDLEWARE
@@ -222,9 +280,33 @@ app.post("/api/auth/login", async (req, res) => {
 
     // STAFF LOGIN
     if (role === "STAFF") {
-      const staff = await Staff.findOne({ name, password });
-      if (!staff)
+      // Trim whitespace from input
+      const trimmedName = (name || '').trim();
+      const trimmedPassword = (password || '').trim();
+      
+      console.log("Staff login attempt - Name:", trimmedName, "Password:", trimmedPassword);
+      
+      // Find staff with trimmed name comparison
+      const allStaff = await Staff.find({});
+      const staff = allStaff.find(s => 
+        s.name.trim() === trimmedName && s.password.trim() === trimmedPassword
+      );
+      
+      if (!staff) {
+        // Try to find by name only to see if staff exists
+        const staffByName = allStaff.find(s => s.name.trim() === trimmedName);
+        
+        if (staffByName) {
+          console.log("Staff found by name:", staffByName.name);
+          console.log("Password mismatch. Expected:", staffByName.password.trim(), "Received:", trimmedPassword);
+          return res.status(400).json({ error: "Invalid password" });
+        }
+        
+        console.log("Staff not found with name:", trimmedName);
         return res.status(400).json({ error: "Invalid staff credentials" });
+      }
+
+      console.log("Staff login successful:", staff.name.trim(), staff.department);
 
       return res.json({
         user: {
@@ -301,6 +383,34 @@ app.post("/api/requests", upload.single("event_report"), async (req, res) => {
 
     const staff = await Staff.findById(staffId);
     if (!staff) return res.status(400).json({ error: "Invalid staffId" });
+
+    // CONDITION 1: Check if same staff has created similar event before
+    const staffRequests = await Request.find({ staffId });
+    
+    for (const existingReq of staffRequests) {
+      if (areTextsSimilar(existingReq.eventName, event_name, 0.7)) {
+        return res.status(400).json({ 
+          error: `You have already created a similar event: "${existingReq.eventName}". Please use a different event name.` 
+        });
+      }
+    }
+
+    // CONDITION 2: Check if any staff in same department has created similar event
+    const departmentRequests = await Request.find({ 
+      department: staff.department,
+      staffId: { $ne: staffId } // Exclude current staff's requests (already checked above)
+    });
+    
+    for (const existingReq of departmentRequests) {
+      const namesSimilar = areTextsSimilar(existingReq.eventName, event_name, 0.7);
+      const purposesSimilar = areTextsSimilar(existingReq.purpose, purpose, 0.6);
+      
+      if (namesSimilar && purposesSimilar) {
+        return res.status(400).json({ 
+          error: `A similar event request has already been created by ${existingReq.staffName} in your department: "${existingReq.eventName}".` 
+        });
+      }
+    }
 
     let fileUrl = null;
 
