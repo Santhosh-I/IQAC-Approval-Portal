@@ -21,6 +21,10 @@ function StaffHome() {
   const [eventDate, setEventDate] = useState("");
   const [purpose, setPurpose] = useState("");
   const [report, setReport] = useState(null);
+  
+  // Modal state for duplicate warning
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateMessage, setDuplicateMessage] = useState("");
 
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -124,6 +128,11 @@ function StaffHome() {
   const submit = async (e) => {
     e.preventDefault();
 
+    console.log("Submit clicked!");
+    console.log("Event Name:", eventName);
+    console.log("Purpose:", purpose);
+    console.log("Report:", report);
+
     if (!report) {
       return toast.error("Please upload event report file");
     }
@@ -135,8 +144,11 @@ function StaffHome() {
     formData.append("purpose", purpose);
     formData.append("event_report", report);
 
+    console.log("Sending request to backend...");
+
     try {
       await createRequest(formData);
+      console.log("Request successful!");
       toast.success("Request submitted!");
 
       // clear form
@@ -147,12 +159,17 @@ function StaffHome() {
 
       loadRequests();
     } catch (err) {
+      console.log("Error caught:", err);
+      console.log("Error response:", err.response);
+      
       // Check if it's a duplicate event error
       if (err.response && err.response.data && err.response.data.error) {
         const errorMsg = err.response.data.error;
+        console.log("Error message:", errorMsg);
         
         // Show custom modal for duplicate events
         if (errorMsg.includes("already created") || errorMsg.includes("similar event")) {
+          console.log("Showing duplicate modal");
           setDuplicateMessage(errorMsg);
           setShowDuplicateModal(true);
         } else {
@@ -326,6 +343,63 @@ function StaffHome() {
           </div>
         );
       })}
+      
+      {/* DUPLICATE EVENT WARNING MODAL */}
+      {showDuplicateModal && (
+        <div 
+          className="modal show d-block" 
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowDuplicateModal(false)}
+        >
+          <div 
+            className="modal-dialog modal-dialog-centered"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content">
+              <div className="modal-header bg-warning text-dark">
+                <h5 className="modal-title">
+                  <i className="bi bi-exclamation-triangle-fill me-2"></i>
+                  Duplicate Event Warning
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close"
+                  onClick={() => setShowDuplicateModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-warning mb-0">
+                  <h6 className="alert-heading">
+                    <strong>Cannot Create Event Request</strong>
+                  </h6>
+                  <hr />
+                  <p className="mb-0">{duplicateMessage}</p>
+                </div>
+                
+                <div className="mt-3">
+                  <p className="text-muted small mb-1">
+                    <strong>Suggestion:</strong>
+                  </p>
+                  <ul className="text-muted small">
+                    <li>Use a different event name that clearly distinguishes your event</li>
+                    <li>Modify the purpose/description to make it unique</li>
+                    <li>Contact the other staff member if this is a duplicate submission</li>
+                  </ul>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-primary"
+                  onClick={() => setShowDuplicateModal(false)}
+                >
+                  Understood
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
