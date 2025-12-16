@@ -89,7 +89,7 @@ function normalizeFlow(arr) {
 // ===============================
 async function createDefaultRoles() {
   const roles = [
-    { name: "Admin User", role: "ADMIN", password: "admin123" },
+    { name: "Admin User", role: "ADMIN", password: "admin@123" },
     { name: "IQAC User", role: "IQAC", password: "123" },
     { name: "Principal User", role: "PRINCIPAL", password: "123" },
     { name: "Director User", role: "DIRECTOR", password: "123" },
@@ -102,6 +102,13 @@ async function createDefaultRoles() {
     if (!existing) {
       await User.create(r);
       console.log(`Created default user for role: ${r.role}`);
+    } else {
+      // Update password if it exists
+      if (existing.role === "ADMIN" && existing.password !== "admin@123") {
+        existing.password = "admin@123";
+        await existing.save();
+        console.log(`Updated password for role: ${r.role}`);
+      }
     }
   }
 }
@@ -234,7 +241,12 @@ app.post("/api/auth/login", async (req, res) => {
 
     // OTHER ROLES (IQAC, PRINCIPAL, DIRECTOR, AO, CEO, ADMIN)
     const user = await User.findOne({ role });
-    if (!user) return res.status(400).json({ error: "Role not found" });
+    if (!user) {
+      console.log(`User not found for role: ${role}`);
+      return res.status(400).json({ error: "Role not found" });
+    }
+
+    console.log(`Login attempt for ${role}: User found - ${user.name}, Password match: ${user.password === password}`);
 
     if (user.password !== password)
       return res.status(400).json({ error: "Invalid password" });
