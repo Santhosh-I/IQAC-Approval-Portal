@@ -99,10 +99,10 @@ async function getPresignedUrl(fileKey) {
 }
 
 // ===============================
-// NORMALIZE APPROVAL FLOW ORDER
+// NORMALIZE APPROVAL FLOW ORDER (excluding HOD as it's handled separately)
 // ===============================
 function normalizeFlow(arr) {
-  const order = ["HOD", "PRINCIPAL", "DIRECTOR", "AO", "CEO"];
+  const order = ["PRINCIPAL", "DIRECTOR", "AO", "CEO"];
   if (!Array.isArray(arr)) return [];
   const set = new Set(arr.map((r) => r.toUpperCase()));
   return order.filter((r) => set.has(r));
@@ -185,6 +185,15 @@ mongoose
     console.log("MongoDB Connected (Atlas)");
     await createDefaultRoles();
     await createDefaultStaffs();
+    
+    // Fix old requests that have 'HOD' in workflowRoles
+    const fixedCount = await Request.updateMany(
+      { workflowRoles: "HOD" },
+      { $pull: { workflowRoles: "HOD" } }
+    );
+    if (fixedCount.modifiedCount > 0) {
+      console.log(`Fixed ${fixedCount.modifiedCount} requests by removing HOD from workflow`);
+    }
   })
   .catch((err) => {
     console.error("MongoDB connection error:", err);
@@ -306,8 +315,8 @@ app.post("/api/requests", upload.single("event_report"), async (req, res) => {
       eventDate: event_date,
       purpose,
       reportPath: fileUrl,
-      currentRole: "HOD",
-      overallStatus: "Waiting approval for HOD",
+      currentRole: "IQAC",
+      overallStatus: "Waiting approval for IQAC",
       referenceNo: null,
       workflowRoles: [],
       approvals: [],
@@ -337,9 +346,13 @@ app.get("/api/requests", async (req, res) => {
     }
 
     console.log("GET /api/requests filter:", filter);
+    console.log("Query params - role:", req.query.current_role, "department:", req.query.department);
 
     const requests = await Request.find(filter).sort({ createdAt: -1 });
     console.log("Found requests:", requests.length);
+    if (requests.length > 0) {
+      console.log("First request department:", requests[0].department, "currentRole:", requests[0].currentRole);
+    }
 
     // Generate pre-signed URLs for each request
     const requestsWithUrls = await Promise.all(
@@ -398,29 +411,44 @@ app.post("/api/requests/:id/action", async (req, res) => {
       decidedAt: now,
     });
 
-    // HOD special logic - after HOD approves, move to IQAC
+    // HOD special logic - after HOD approves, move to first workflow role
     if (role === "HOD" && action === "approve") {
-      doc.currentRole = "IQAC";
-      doc.overallStatus = "Waiting approval for IQAC";
+      const seq = doc.workflowRoles;
+      
+      console.log("HOD Approval - workflowRoles:", seq);
+      console.log("HOD Approval - request department:", doc.department);
+      
+      if (seq && seq.length > 0) {
+        doc.currentRole = seq[0];
+        doc.overallStatus = `Waiting approval for ${seq[0]}`;
+        console.log("HOD Approval - Moving to:", seq[0]);
+      } else {
+        // No workflow, mark as completed
+        doc.currentRole = null;
+        doc.overallStatus = "Completed";
+        doc.isCompleted = true;
+        console.log("HOD Approval - No workflow, marking as completed");
+      }
 
       await doc.save();
-      return res.json({ message: "HOD Approved, forwarded to IQAC" });
+      return res.json({ message: "HOD Approved" });
     }
 
     // IQAC special logic
     if (role === "IQAC" && action === "approve") {
       doc.referenceNo = refNumber;
       doc.workflowRoles = normalizeFlow(flow);
-      doc.currentRole = doc.workflowRoles[0] || null;
-
-      doc.overallStatus = doc.currentRole
-        ? `Waiting approval for ${doc.currentRole}`
-        : "Completed";
-
-      if (!doc.currentRole) doc.isCompleted = true;
+      
+      console.log("IQAC Approval - Reference Number:", refNumber);
+      console.log("IQAC Approval - Flow received:", flow);
+      console.log("IQAC Approval - Normalized workflowRoles:", doc.workflowRoles);
+      
+      // After IQAC approval, always send to HOD first (department-specific)
+      doc.currentRole = "HOD";
+      doc.overallStatus = "Waiting approval for HOD";
 
       await doc.save();
-      return res.json({ message: "IQAC Approved" });
+      return res.json({ message: "IQAC Approved, forwarded to HOD" });
     }
 
     // RECREATE logic
