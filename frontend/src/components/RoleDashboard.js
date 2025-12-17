@@ -7,6 +7,8 @@ import {
 } from "../api";
 import { toast } from "react-toastify";
 import useDisableBack from "./useDisableBack";
+import "./Dashboard.css";
+import logo from '../assets/kite-logo.png';
 
 function RoleDashboard() {
   // ------------------------------------------
@@ -135,15 +137,23 @@ function RoleDashboard() {
   // ------------------------------------------
   if (!user || user.role.toUpperCase() !== role) {
     return (
-      <div className="container mt-5 text-center">
-        <h3 className="text-danger">Unauthorized Access</h3>
-        <p>You do not have permission to access this page.</p>
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate("/", { replace: true })}
-        >
-          Go to Login
-        </button>
+      <div className="dashboard-page">
+        <div className="dashboard-wrapper">
+          <div className="dashboard-card">
+            <div className="dashboard-card-header danger">
+              <h4>⚠️ Unauthorized Access</h4>
+            </div>
+            <div className="dashboard-card-body" style={{ textAlign: 'center', padding: '3rem' }}>
+              <p style={{ color: '#64748b', marginBottom: '1.5rem' }}>You do not have permission to access this page.</p>
+              <button
+                className="btn-primary-custom"
+                onClick={() => navigate("/", { replace: true })}
+              >
+                Go to Login
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -152,191 +162,229 @@ function RoleDashboard() {
   // MAIN RENDER
   // ------------------------------------------
   return (
-    <div className="container mt-4">
-      {/* HEADER */}
-      <div className="d-flex justify-content-between align-items-center">
-        <h2 className="fw-bold text-primary">{role} Dashboard</h2>
-        <button className="btn btn-danger btn-sm" onClick={logout}>
-          Logout
-        </button>
+    <div className="dashboard-page">
+      <div className="dashboard-wrapper">
+        {/* HEADER */}
+        <div className="dashboard-header fade-in">
+          <div className="dashboard-header-accent"></div>
+          <div className="dashboard-header-content">
+            <div className="dashboard-header-left">
+              <div className="dashboard-logo-box">
+                <img src={logo} alt="KITE Logo" className="dashboard-logo" />
+              </div>
+              <div className="dashboard-title-section">
+                <h1>{role} Dashboard</h1>
+                <p>Review and approve event requests</p>
+              </div>
+            </div>
+            <div className="dashboard-header-right">
+              <div className="dashboard-user-info">
+                <div className="dashboard-user-name">Welcome, {user?.name}</div>
+                <div className="dashboard-user-role">{role}</div>
+              </div>
+              <button className="btn-logout" onClick={logout}>
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* REQUESTS TABLE */}
+        <div className="dashboard-card fade-in">
+          <div className="dashboard-card-header">
+            <h4>📋 Pending Requests</h4>
+            <p>Requests awaiting your approval</p>
+          </div>
+          <div className="dashboard-card-body">
+            {requests.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-state-icon">✅</div>
+                <h4>No pending requests</h4>
+                <p>All caught up! No requests are waiting for your approval.</p>
+              </div>
+            ) : (
+              <div className="table-responsive">
+                <table className="dashboard-table">
+                  <thead>
+                    <tr>
+                      <th>Event</th>
+                      <th>Staff</th>
+                      <th>Department</th>
+                      <th>Event Date</th>
+                      <th>Report</th>
+                      <th>Comments</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {requests.map((r) => (
+                      <tr key={r._id}>
+                        <td><strong>{r.eventName}</strong></td>
+                        <td>{r.staffName}</td>
+                        <td><span className="badge-custom badge-processing">{r.department}</span></td>
+                        <td>{r.eventDate}</td>
+                        <td>
+                          {r.reportUrl ? (
+                            <button 
+                              className="btn-primary-custom btn-sm-custom"
+                              onClick={() => handleViewReport(r._id)}
+                            >
+                              📄 View
+                            </button>
+                          ) : (
+                            <span style={{ color: '#94a3b8' }}>No File</span>
+                          )}
+                        </td>
+                        <td>
+                          <textarea
+                            className="form-input-custom"
+                            placeholder="Enter comments..."
+                            value={comments[r._id] || ""}
+                            onChange={(e) => handleCommentChange(r._id, e.target.value)}
+                            style={{ minHeight: '60px', fontSize: '0.875rem' }}
+                          />
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <button
+                              className="btn-secondary-custom btn-sm-custom"
+                              onClick={() => handleViewRemarks(r)}
+                              title="View previous authority remarks"
+                            >
+                              👁️ Remarks
+                            </button>
+                            <button
+                              className="btn-success-custom btn-sm-custom"
+                              onClick={() => handleApprove(r._id)}
+                            >
+                              ✅ Approve
+                            </button>
+                            <button
+                              className="btn-warning-custom btn-sm-custom"
+                              onClick={() => handleRecreate(r._id)}
+                            >
+                              🔄 Recreate
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="dashboard-footer fade-in">
+          <div className="dashboard-footer-content">
+            <div className="dashboard-footer-brand">
+              <span>IQAC Approval Portal</span>
+            </div>
+            <div className="dashboard-footer-text">
+              © 2025 KGiSL Institute of Technology. All rights reserved.
+            </div>
+          </div>
+        </div>
       </div>
-
-      <hr />
-
-      {requests.length === 0 ? (
-        <p className="text-muted">No pending requests for {role}</p>
-      ) : (
-        <table className="table table-bordered shadow">
-          <thead className="table-light">
-            <tr>
-              <th>Event</th>
-              <th>Staff</th>
-              <th>Department</th>
-              <th>Event Date</th>
-              <th>Uploaded Report</th>
-              <th>Comments (Required for Recreate)</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {requests.map((r) => (
-              <tr key={r._id}>
-                <td>{r.eventName}</td>
-                <td>{r.staffName}</td>
-                <td>{r.department}</td>
-                <td>{r.eventDate}</td>
-
-                <td>
-                  {r.reportUrl ? (
-                    <button 
-                      className="btn btn-link p-0"
-                      onClick={() => handleViewReport(r._id)}
-                    >
-                      View
-                    </button>
-                  ) : (
-                    "No File"
-                  )}
-                </td>
-
-                {/* COMMENTS TEXTBOX */}
-                <td>
-                  <textarea
-                    className="form-control"
-                    placeholder="Enter comments..."
-                    value={comments[r._id] || ""}
-                    onChange={(e) =>
-                      handleCommentChange(r._id, e.target.value)
-                    }
-                  />
-                </td>
-
-                {/* ACTION BUTTONS */}
-                <td>
-                  <button
-                    className="btn btn-info btn-sm me-2 mb-1"
-                    onClick={() => handleViewRemarks(r)}
-                    title="View previous authority remarks"
-                  >
-                    View Remarks
-                  </button>
-                  <br />
-                  <button
-                    className="btn btn-success btn-sm me-2"
-                    onClick={() => handleApprove(r._id)}
-                  >
-                    Approve
-                  </button>
-
-                  <button
-                    className="btn btn-warning btn-sm"
-                    onClick={() => handleRecreate(r._id)}
-                  >
-                    Recreate
-                  </button>
-
-                  {/* ❌ DO NOT SHOW GENERATE REPORT HERE */}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
       
       {/* REMARKS MODAL */}
       {showRemarksModal && selectedRequestRemarks && (
         <div 
-          className="modal show d-block" 
-          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          className="modal-overlay"
           onClick={() => setShowRemarksModal(false)}
         >
           <div 
-            className="modal-dialog modal-dialog-centered modal-lg"
+            className="modal-container"
             onClick={(e) => e.stopPropagation()}
+            style={{ maxWidth: '700px' }}
           >
-            <div className="modal-content">
-              <div className="modal-header bg-primary text-white">
-                <h5 className="modal-title">
-                  <i className="bi bi-chat-left-text-fill me-2"></i>
-                  Previous Authority Remarks
-                </h5>
-                <button
-                  type="button"
-                  className="btn-close btn-close-white"
-                  onClick={() => setShowRemarksModal(false)}
-                ></button>
-              </div>
-              <div className="modal-body">
-                <div className="mb-3">
-                  <h6 className="fw-bold">Event Details:</h6>
-                  <p className="mb-1"><strong>Event Name:</strong> {selectedRequestRemarks.eventName}</p>
-                  <p className="mb-1"><strong>Staff:</strong> {selectedRequestRemarks.staffName}</p>
-                  <p className="mb-1"><strong>Department:</strong> {selectedRequestRemarks.department}</p>
-                  <p className="mb-1"><strong>Event Date:</strong> {selectedRequestRemarks.eventDate}</p>
+            <div className="modal-header-custom">
+              <h5>💬 Previous Authority Remarks</h5>
+              <button
+                className="modal-close-btn"
+                onClick={() => setShowRemarksModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="modal-body-custom">
+              <div className="alert-custom alert-info" style={{ marginBottom: '1.5rem' }}>
+                <div>
+                  <h6 style={{ fontWeight: 700, marginBottom: '0.75rem' }}>📋 Event Details</h6>
+                  <p style={{ margin: '0.25rem 0' }}><strong>Event Name:</strong> {selectedRequestRemarks.eventName}</p>
+                  <p style={{ margin: '0.25rem 0' }}><strong>Staff:</strong> {selectedRequestRemarks.staffName}</p>
+                  <p style={{ margin: '0.25rem 0' }}><strong>Department:</strong> {selectedRequestRemarks.department}</p>
+                  <p style={{ margin: '0' }}><strong>Event Date:</strong> {selectedRequestRemarks.eventDate}</p>
                 </div>
-                
-                <hr />
-                
-                <h6 className="fw-bold mb-3">Approval History & Remarks:</h6>
-                
-                {selectedRequestRemarks.approvals.length === 0 ? (
-                  <div className="alert alert-info">
-                    <i className="bi bi-info-circle me-2"></i>
-                    No remarks or comments have been provided yet.
-                  </div>
-                ) : (
-                  <div className="timeline">
-                    {selectedRequestRemarks.approvals.map((approval, idx) => (
-                      <div key={idx} className="card mb-3 shadow-sm">
-                        <div className="card-body">
-                          <div className="d-flex justify-content-between align-items-start mb-2">
-                            <h6 className="mb-0">
-                              <span className={`badge ${
-                                approval.status === 'Approved' ? 'bg-success' : 
-                                approval.status === 'Recreated' ? 'bg-warning text-dark' : 
-                                'bg-secondary'
-                              }`}>
-                                {approval.role}
-                              </span>
-                            </h6>
-                            <small className="text-muted">
-                              {new Date(approval.decidedAt).toLocaleString()}
-                            </small>
-                          </div>
-                          
-                          <div className="mb-2">
-                            <strong>Status:</strong> 
-                            <span className={`ms-2 badge ${
-                              approval.status === 'Approved' ? 'bg-success' : 
-                              approval.status === 'Recreated' ? 'bg-warning text-dark' : 
-                              'bg-secondary'
-                            }`}>
-                              {approval.status}
-                            </span>
-                          </div>
-                          
-                          <div>
-                            <strong>Comments/Remarks:</strong>
-                            <p className="mt-1 mb-0 p-2 bg-light rounded">
-                              {approval.comments || <em className="text-muted">No comments provided</em>}
-                            </p>
-                          </div>
-                        </div>
+              </div>
+              
+              <h6 style={{ fontWeight: 700, marginBottom: '1rem', color: '#1e293b' }}>📜 Approval History & Remarks</h6>
+              
+              {selectedRequestRemarks.approvals.length === 0 ? (
+                <div className="alert-custom alert-warning">
+                  <span>ℹ️ No remarks or comments have been provided yet.</span>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {selectedRequestRemarks.approvals.map((approval, idx) => (
+                    <div key={idx} style={{ 
+                      background: 'white', 
+                      borderRadius: '0.75rem', 
+                      padding: '1rem',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
+                      border: '1px solid #e2e8f0'
+                    }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                        <span className={`badge-custom ${
+                          approval.status === 'Approved' ? 'badge-approved' : 
+                          approval.status === 'Recreated' ? 'badge-pending' : 
+                          'badge-processing'
+                        }`}>
+                          {approval.role}
+                        </span>
+                        <small style={{ color: '#64748b' }}>
+                          {new Date(approval.decidedAt).toLocaleString()}
+                        </small>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-              <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setShowRemarksModal(false)}
-                >
-                  Close
-                </button>
-              </div>
+                      
+                      <div style={{ marginBottom: '0.5rem' }}>
+                        <strong>Status:</strong> 
+                        <span className={`badge-custom ${
+                          approval.status === 'Approved' ? 'badge-approved' : 
+                          approval.status === 'Recreated' ? 'badge-pending' : 
+                          'badge-processing'
+                        }`} style={{ marginLeft: '0.5rem' }}>
+                          {approval.status}
+                        </span>
+                      </div>
+                      
+                      <div>
+                        <strong>Comments:</strong>
+                        <p style={{ 
+                          margin: '0.5rem 0 0 0', 
+                          padding: '0.75rem', 
+                          background: '#f8fafc', 
+                          borderRadius: '0.5rem',
+                          color: approval.comments ? '#334155' : '#94a3b8',
+                          fontStyle: approval.comments ? 'normal' : 'italic'
+                        }}>
+                          {approval.comments || 'No comments provided'}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="modal-footer-custom">
+              <button
+                className="btn-secondary-custom"
+                onClick={() => setShowRemarksModal(false)}
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>
