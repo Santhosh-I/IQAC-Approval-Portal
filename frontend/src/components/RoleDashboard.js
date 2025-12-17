@@ -22,6 +22,10 @@ function RoleDashboard() {
   const [requests, setRequests] = useState([]);
 
   const [comments, setComments] = useState({}); // comment per request
+  
+  // Modal state for viewing remarks
+  const [showRemarksModal, setShowRemarksModal] = useState(false);
+  const [selectedRequestRemarks, setSelectedRequestRemarks] = useState(null);
 
   // ------------------------------------------
   // LOGOUT
@@ -68,6 +72,20 @@ function RoleDashboard() {
   // ------------------------------------------
   const handleCommentChange = (id, value) => {
     setComments((prev) => ({ ...prev, [id]: value }));
+  };
+
+  // ------------------------------------------
+  // VIEW REMARKS
+  // ------------------------------------------
+  const handleViewRemarks = (request) => {
+    setSelectedRequestRemarks({
+      eventName: request.eventName,
+      eventDate: request.eventDate,
+      staffName: request.staffName,
+      department: request.department,
+      approvals: request.approvals || []
+    });
+    setShowRemarksModal(true);
   };
 
   // ------------------------------------------
@@ -197,6 +215,14 @@ function RoleDashboard() {
                 {/* ACTION BUTTONS */}
                 <td>
                   <button
+                    className="btn btn-info btn-sm me-2 mb-1"
+                    onClick={() => handleViewRemarks(r)}
+                    title="View previous authority remarks"
+                  >
+                    View Remarks
+                  </button>
+                  <br />
+                  <button
                     className="btn btn-success btn-sm me-2"
                     onClick={() => handleApprove(r._id)}
                   >
@@ -216,6 +242,104 @@ function RoleDashboard() {
             ))}
           </tbody>
         </table>
+      )}
+      
+      {/* REMARKS MODAL */}
+      {showRemarksModal && selectedRequestRemarks && (
+        <div 
+          className="modal show d-block" 
+          style={{ backgroundColor: 'rgba(0,0,0,0.5)' }}
+          onClick={() => setShowRemarksModal(false)}
+        >
+          <div 
+            className="modal-dialog modal-dialog-centered modal-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content">
+              <div className="modal-header bg-primary text-white">
+                <h5 className="modal-title">
+                  <i className="bi bi-chat-left-text-fill me-2"></i>
+                  Previous Authority Remarks
+                </h5>
+                <button
+                  type="button"
+                  className="btn-close btn-close-white"
+                  onClick={() => setShowRemarksModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <h6 className="fw-bold">Event Details:</h6>
+                  <p className="mb-1"><strong>Event Name:</strong> {selectedRequestRemarks.eventName}</p>
+                  <p className="mb-1"><strong>Staff:</strong> {selectedRequestRemarks.staffName}</p>
+                  <p className="mb-1"><strong>Department:</strong> {selectedRequestRemarks.department}</p>
+                  <p className="mb-1"><strong>Event Date:</strong> {selectedRequestRemarks.eventDate}</p>
+                </div>
+                
+                <hr />
+                
+                <h6 className="fw-bold mb-3">Approval History & Remarks:</h6>
+                
+                {selectedRequestRemarks.approvals.length === 0 ? (
+                  <div className="alert alert-info">
+                    <i className="bi bi-info-circle me-2"></i>
+                    No remarks or comments have been provided yet.
+                  </div>
+                ) : (
+                  <div className="timeline">
+                    {selectedRequestRemarks.approvals.map((approval, idx) => (
+                      <div key={idx} className="card mb-3 shadow-sm">
+                        <div className="card-body">
+                          <div className="d-flex justify-content-between align-items-start mb-2">
+                            <h6 className="mb-0">
+                              <span className={`badge ${
+                                approval.status === 'Approved' ? 'bg-success' : 
+                                approval.status === 'Recreated' ? 'bg-warning text-dark' : 
+                                'bg-secondary'
+                              }`}>
+                                {approval.role}
+                              </span>
+                            </h6>
+                            <small className="text-muted">
+                              {new Date(approval.decidedAt).toLocaleString()}
+                            </small>
+                          </div>
+                          
+                          <div className="mb-2">
+                            <strong>Status:</strong> 
+                            <span className={`ms-2 badge ${
+                              approval.status === 'Approved' ? 'bg-success' : 
+                              approval.status === 'Recreated' ? 'bg-warning text-dark' : 
+                              'bg-secondary'
+                            }`}>
+                              {approval.status}
+                            </span>
+                          </div>
+                          
+                          <div>
+                            <strong>Comments/Remarks:</strong>
+                            <p className="mt-1 mb-0 p-2 bg-light rounded">
+                              {approval.comments || <em className="text-muted">No comments provided</em>}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="modal-footer">
+                <button
+                  type="button"
+                  className="btn btn-secondary"
+                  onClick={() => setShowRemarksModal(false)}
+                >
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
