@@ -7,8 +7,12 @@ import {
   adminGetDepartments,
 } from "../api";
 import { toast } from "react-toastify";
+import { useNavigate } from "react-router-dom";
+import "./Dashboard.css";
+import logo from '../assets/kite-logo.png';
 
 export default function StaffManagement() {
+  const navigate = useNavigate();
   const user = JSON.parse(localStorage.getItem("user"));
   const role = user.role;
 
@@ -94,106 +98,187 @@ export default function StaffManagement() {
   };
 
   return (
-    <div className="container mt-5 pb-5">
-      <h3 className="text-center mb-4">Staff Management</h3>
+    <div className="dashboard-page">
+      <div className="dashboard-wrapper">
+        {/* HEADER */}
+        <div className="dashboard-header fade-in">
+          <div className="dashboard-header-accent"></div>
+          <div className="dashboard-header-content">
+            <div className="dashboard-header-left">
+              <div className="dashboard-logo-box">
+                <img src={logo} alt="KITE Logo" className="dashboard-logo" />
+              </div>
+              <div className="dashboard-title-section">
+                <h1>Staff Management</h1>
+                <p>Add, edit, and manage staff accounts</p>
+              </div>
+            </div>
+            <div className="dashboard-header-right">
+              <button 
+                className="btn-secondary-custom" 
+                onClick={() => navigate("/admin/dashboard")}
+              >
+                ← Back to Dashboard
+              </button>
+            </div>
+          </div>
+        </div>
 
-      <div className="card shadow p-4 mb-4">
-        <h5>{editMode ? "Edit Staff" : "Add Staff"}</h5>
-        <form onSubmit={handleSubmit}>
-          {/* Name */}
-          <input
-            type="text"
-            className="form-control mb-3"
-            placeholder="Name"
-            name="name"
-            value={form.name}
-            onChange={handleChange}
-            required
-          />
+        {/* ADD/EDIT STAFF FORM */}
+        <div className="dashboard-card mb-4 fade-in">
+          <div className="dashboard-card-header">
+            <h4>{editMode ? "✏️ Edit Staff" : "➕ Add New Staff"}</h4>
+            <p>{editMode ? "Update staff information" : "Create a new staff account"}</p>
+          </div>
+          <div className="dashboard-card-body">
+            <form onSubmit={handleSubmit} style={{ maxWidth: '500px' }}>
+              <div className="form-group-custom">
+                <label className="form-label-custom">Name</label>
+                <input
+                  type="text"
+                  className="form-input-custom"
+                  placeholder="Enter staff name"
+                  name="name"
+                  value={form.name}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-          {/* Email */}
-          <input
-            type="email"
-            className="form-control mb-3"
-            placeholder="Email"
-            name="email"
-            value={form.email}
-            onChange={handleChange}
-            required
-          />
+              <div className="form-group-custom">
+                <label className="form-label-custom">Email</label>
+                <input
+                  type="email"
+                  className="form-input-custom"
+                  placeholder="Enter email address"
+                  name="email"
+                  value={form.email}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-          {/* Department */}
-          <select
-            className="form-select mb-3"
-            name="department"
-            value={form.department}
-            onChange={handleChange}
-            required
-          >
-            <option value="">Select Department</option>
-            {departments.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
+              <div className="form-group-custom">
+                <label className="form-label-custom">Department</label>
+                <select
+                  className="form-input-custom"
+                  name="department"
+                  value={form.department}
+                  onChange={handleChange}
+                  required
+                >
+                  <option value="">Select Department</option>
+                  {departments.map((d) => (
+                    <option key={d} value={d}>{d}</option>
+                  ))}
+                </select>
+              </div>
 
-          {/* Password */}
-          <input
-            type="text"
-            className="form-control mb-3"
-            placeholder="Password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
+              <div className="form-group-custom">
+                <label className="form-label-custom">Password</label>
+                <input
+                  type="text"
+                  className="form-input-custom"
+                  placeholder="Enter password"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  required
+                />
+              </div>
 
-          <button className="btn btn-primary w-100" type="submit">
-            {editMode ? "Update Staff" : "Create Staff"}
-          </button>
-        </form>
-      </div>
-
-      {/* STAFF TABLE */}
-      <div className="card shadow p-4">
-        <h5>All Staffs</h5>
-        <table className="table table-bordered table-striped mt-3">
-          <thead className="table-dark">
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Department</th>
-              <th>Password</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {staffList.map((s) => (
-              <tr key={s._id}>
-                <td>{s.name}</td>
-                <td>{s.email}</td>
-                <td>{s.department}</td>
-                <td>{s.password}</td>
-                <td>
-                  <button
-                    className="btn btn-warning btn-sm me-2"
-                    onClick={() => handleEdit(s)}
+              <div style={{ display: 'flex', gap: '0.75rem' }}>
+                <button className="btn-primary-custom" type="submit" style={{ flex: 1 }}>
+                  {editMode ? "Update Staff" : "Create Staff"}
+                </button>
+                {editMode && (
+                  <button 
+                    type="button"
+                    className="btn-secondary-custom"
+                    onClick={() => {
+                      setForm({ name: "", email: "", department: "", password: "" });
+                      setEditMode(false);
+                      setEditId(null);
+                    }}
                   >
-                    Edit
+                    Cancel
                   </button>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDelete(s._id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* STAFF TABLE */}
+        <div className="dashboard-card fade-in">
+          <div className="dashboard-card-header">
+            <h4>👥 All Staff Members</h4>
+            <p>Manage existing staff accounts</p>
+          </div>
+          <div className="dashboard-card-body">
+            <div className="table-responsive">
+              <table className="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Password</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staffList.length === 0 ? (
+                    <tr>
+                      <td colSpan="5">
+                        <div className="empty-state">
+                          <div className="empty-state-icon">👥</div>
+                          <h4>No staff members yet</h4>
+                          <p>Add your first staff member using the form above</p>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    staffList.map((s) => (
+                      <tr key={s._id}>
+                        <td><strong>{s.name}</strong></td>
+                        <td>{s.email}</td>
+                        <td><span className="badge-custom badge-processing">{s.department}</span></td>
+                        <td>{s.password}</td>
+                        <td>
+                          <button
+                            className="btn-warning-custom btn-sm-custom me-2"
+                            onClick={() => handleEdit(s)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn-danger-custom btn-sm-custom"
+                            onClick={() => handleDelete(s._id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* FOOTER */}
+        <div className="dashboard-footer fade-in">
+          <div className="dashboard-footer-content">
+            <div className="dashboard-footer-brand">
+              <span>IQAC Approval Portal</span>
+            </div>
+            <div className="dashboard-footer-text">
+              © 2025 KGiSL Institute of Technology. All rights reserved.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
