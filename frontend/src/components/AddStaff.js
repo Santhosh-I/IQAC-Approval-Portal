@@ -138,16 +138,23 @@ export default function StaffManagement() {
             ))}
           </select>
 
-          {/* Password */}
-          <input
-            type="text"
-            className="form-control mb-3"
-            placeholder="Password"
-            name="password"
-            value={form.password}
-            onChange={handleChange}
-            required
-          />
+          {/* Password - only show when creating new staff */}
+          {!editMode && (
+            <input
+              type="text"
+              className="form-control mb-3"
+              placeholder="Password"
+              name="password"
+              value={form.password}
+              onChange={handleChange}
+              required
+            />
+          )}
+          {editMode && (
+            <div className="alert alert-info mb-3">
+              <small>💡 To change password, use "Reset Password" button from the Admin Dashboard.</small>
+            </div>
+          )}
 
           <button className="btn btn-primary w-100" type="submit">
             {editMode ? "Update Staff" : "Create Staff"}
@@ -164,7 +171,6 @@ export default function StaffManagement() {
               <th>Name</th>
               <th>Email</th>
               <th>Department</th>
-              <th>Password</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -175,7 +181,6 @@ export default function StaffManagement() {
                 <td>{s.name}</td>
                 <td>{s.email}</td>
                 <td>{s.department}</td>
-                <td>{s.password}</td>
                 <td>
                   <button
                     className="btn btn-warning btn-sm me-2"
