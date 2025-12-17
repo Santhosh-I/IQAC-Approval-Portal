@@ -23,6 +23,10 @@ function StaffHome() {
   const [purpose, setPurpose] = useState("");
   const [report, setReport] = useState(null);
 
+  // Duplicate event modal state
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateMessage, setDuplicateMessage] = useState("");
+
   // Rejection details modal state
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [selectedRejection, setSelectedRejection] = useState(null);
@@ -325,7 +329,7 @@ function StaffHome() {
           />
           <small className="text-muted">Only PDF files are accepted</small>
 
-          <button className="btn btn-primary w-100">Submit</button>
+          <button type="submit" className="btn btn-primary w-100">Submit</button>
         </form>
       </div>
 
@@ -584,6 +588,49 @@ function StaffHome() {
                   onClick={() => setShowRejectionModal(false)}
                 >
                   Close
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DUPLICATE EVENT WARNING MODAL */}
+      {showDuplicateModal && (
+        <div
+          className="modal show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowDuplicateModal(false)}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header bg-warning text-dark border-0">
+                <h5 className="modal-title fw-bold">⚠️ Duplicate Event Detected</h5>
+                <button
+                  className="btn-close"
+                  onClick={() => setShowDuplicateModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-warning mb-0">
+                  <p className="mb-2"><strong>{duplicateMessage}</strong></p>
+                  <hr />
+                  <p className="mb-0 text-muted">
+                    <small>
+                      💡 <strong>Suggestion:</strong> Please choose a different event name or modify the purpose to make it unique.
+                    </small>
+                  </p>
+                </div>
+              </div>
+              <div className="modal-footer border-0">
+                <button
+                  className="btn btn-primary px-4"
+                  onClick={() => setShowDuplicateModal(false)}
+                >
+                  Got it
                 </button>
               </div>
             </div>

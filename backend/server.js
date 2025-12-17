@@ -409,7 +409,11 @@ app.post("/api/requests", upload.single("event_report"), async (req, res) => {
       const namesSimilar = areTextsSimilar(existingReq.eventName, event_name, 0.7);
       const purposesSimilar = areTextsSimilar(existingReq.purpose, purpose, 0.6);
       
-      if (namesSimilar && purposesSimilar) {
+      // If event names are highly similar (exact or near-exact match)
+      const namesVerySimilar = areTextsSimilar(existingReq.eventName, event_name, 0.9);
+      
+      // Block if: names are very similar OR (names similar AND purposes similar)
+      if (namesVerySimilar || (namesSimilar && purposesSimilar)) {
         return res.status(400).json({ 
           error: `A similar event request has already been created by ${existingReq.staffName} in your department: "${existingReq.eventName}".` 
         });
