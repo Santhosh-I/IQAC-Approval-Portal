@@ -730,22 +730,26 @@ app.post("/api/requests/:id/action", async (req, res) => {
     if (role === "IQAC" && action === "approve") {
       // Check if reference number is already in use
       if (refNumber) {
+        // Convert to uppercase for consistency
+        const normalizedRefNumber = refNumber.toUpperCase().trim();
+        
         const existingRef = await Request.findOne({ 
-          referenceNo: refNumber,
+          referenceNo: normalizedRefNumber,
           _id: { $ne: req.params.id } // Exclude current request
         });
         
         if (existingRef) {
           return res.status(400).json({ 
-            error: `Reference number ${refNumber} is already assigned to event: "${existingRef.eventName}". Please use a unique reference number.` 
+            error: `Reference number ${normalizedRefNumber} is already assigned to event: "${existingRef.eventName}". Please use a unique reference number.` 
           });
         }
+        
+        doc.referenceNo = normalizedRefNumber;
       }
       
-      doc.referenceNo = refNumber;
       doc.workflowRoles = normalizeFlow(flow);
       
-      console.log("IQAC Approval - Reference Number:", refNumber);
+      console.log("IQAC Approval - Reference Number:", doc.referenceNo);
       console.log("IQAC Approval - Flow received:", flow);
       console.log("IQAC Approval - Normalized workflowRoles:", doc.workflowRoles);
       
