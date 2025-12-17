@@ -39,6 +39,10 @@ function StaffHome() {
   const [editPurpose, setEditPurpose] = useState("");
   const [editReport, setEditReport] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Loading states for better UX
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -56,12 +60,15 @@ function StaffHome() {
   // LOAD STAFF REQUESTS
   // ----------------------------------------
   const loadRequests = async () => {
+    setIsLoading(true);
     try {
       if (!staffId) return;
       const res = await fetchStaffRequests(staffId);
       setRequests(res.data);
     } catch (err) {
       toast.error("Failed to load requests");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -191,14 +198,11 @@ function StaffHome() {
   const submit = async (e) => {
     e.preventDefault();
 
-    console.log("Submit clicked!");
-    console.log("Event Name:", eventName);
-    console.log("Purpose:", purpose);
-    console.log("Report:", report);
-
     if (!report) {
       return toast.error("Please upload event report file");
     }
+
+    setIsCreating(true);
 
     const formData = new FormData();
     formData.append("staffId", staffId);
@@ -207,11 +211,8 @@ function StaffHome() {
     formData.append("purpose", purpose);
     formData.append("event_report", report);
 
-    console.log("Sending request to backend...");
-
     try {
       await createRequest(formData);
-      console.log("Request successful!");
       toast.success("Request submitted!");
 
       // clear form
@@ -222,17 +223,12 @@ function StaffHome() {
 
       loadRequests();
     } catch (err) {
-      console.log("Error caught:", err);
-      console.log("Error response:", err.response);
-      
       // Check if it's a duplicate event error
       if (err.response && err.response.data && err.response.data.error) {
         const errorMsg = err.response.data.error;
-        console.log("Error message:", errorMsg);
         
         // Show custom modal for duplicate events
         if (errorMsg.includes("already created") || errorMsg.includes("similar event")) {
-          console.log("Showing duplicate modal");
           setDuplicateMessage(errorMsg);
           setShowDuplicateModal(true);
         } else {
@@ -241,6 +237,8 @@ function StaffHome() {
       } else {
         toast.error("Failed to submit request");
       }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -329,7 +327,13 @@ function StaffHome() {
           />
           <small className="text-muted">Only PDF files are accepted</small>
 
-          <button type="submit" className="btn btn-primary w-100">Submit</button>
+          <button type="submit" className="btn btn-primary w-100" disabled={isCreating}>
+            {isCreating ? (
+              <><span className="spinner-border spinner-border-sm me-2"></span>Submitting...</>
+            ) : (
+              "Submit"
+            )}
+          </button>
         </form>
       </div>
 
@@ -338,11 +342,16 @@ function StaffHome() {
       {/* REQUEST LIST */}
       <h3 className="fw-bold">Your Requests</h3>
 
-      {requests.length === 0 && (
+      {isLoading ? (
+        <div className="text-center py-4">
+          <span className="spinner-border text-primary"></span>
+          <p className="text-muted mt-2">Loading requests...</p>
+        </div>
+      ) : requests.length === 0 ? (
         <p className="text-muted">No requests submitted yet.</p>
-      )}
+      ) : null}
 
-      {requests.map((req) => {
+      {!isLoading && requests.map((req) => {
         const bgColor = getStatusColor(req);
 
         const isApproved =

@@ -170,7 +170,12 @@ function IQACHome() {
     }
   };
 
-  if (loading) return <h4 className="text-center mt-5">Loading...</h4>;
+  if (loading) return (
+    <div className="text-center py-5 mt-5">
+      <span className="spinner-border text-primary" style={{ width: "3rem", height: "3rem" }}></span>
+      <p className="text-muted mt-3">Loading requests...</p>
+    </div>
+  );
 
   return (
     <div className="container mt-4">

@@ -17,6 +17,8 @@ export default function AdminDashboard() {
 
   const [staffList, setStaffList] = useState([]);
   const [hodList, setHodList] = useState([]);
+  const [loadingStaff, setLoadingStaff] = useState(true);
+  const [loadingHod, setLoadingHod] = useState(true);
 
   useEffect(() => {
     loadStaffs();
@@ -36,15 +38,19 @@ export default function AdminDashboard() {
   }, []);
 
   const loadStaffs = async () => {
+    setLoadingStaff(true);
     try {
       const res = await adminGetAllStaff(role);
       setStaffList(res.data.staffs);
     } catch {
       toast.error("Failed to load staff list");
+    } finally {
+      setLoadingStaff(false);
     }
   };
 
   const loadHods = async () => {
+    setLoadingHod(true);
     try {
       const depRes = await adminGetDepartments(role);
       const deps = depRes.data.departments || [];
@@ -63,6 +69,8 @@ export default function AdminDashboard() {
       setHodList(results);
     } catch {
       toast.error("Failed to load HOD list");
+    } finally {
+      setLoadingHod(false);
     }
   };
 
@@ -158,6 +166,12 @@ export default function AdminDashboard() {
       {/* ALL HODs TABLE */}
       <div className="card shadow p-4 mt-5">
         <h5>All HODs</h5>
+        {loadingHod ? (
+          <div className="text-center py-4">
+            <span className="spinner-border text-primary"></span>
+            <p className="text-muted mt-2">Loading HODs...</p>
+          </div>
+        ) : (
         <table className="table table-bordered table-striped mt-3">
           <thead className="table-dark">
             <tr>
@@ -202,11 +216,18 @@ export default function AdminDashboard() {
             ))}
           </tbody>
         </table>
+        )}
       </div>
 
       {/* ALL STAFFS TABLE */}
       <div className="card shadow p-4 mt-4">
         <h5>All Staffs</h5>
+        {loadingStaff ? (
+          <div className="text-center py-4">
+            <span className="spinner-border text-primary"></span>
+            <p className="text-muted mt-2">Loading staff...</p>
+          </div>
+        ) : (
         <table className="table table-bordered table-striped mt-3">
           <thead className="table-dark">
             <tr>
@@ -243,6 +264,7 @@ export default function AdminDashboard() {
             ))}
           </tbody>
         </table>
+        )}
       </div>
     </div>
   );

@@ -1,34 +1,46 @@
-import React from "react";
+import React, { Suspense, lazy } from "react";
 import { Routes, Route } from "react-router-dom";
 
+// Eagerly load Login (first page users see)
 import Login from "./components/Login";
-import StaffHome from "./components/StaffHome";
-import RoleDashboard from "./components/RoleDashboard";
-import ApprovalLetter from "./components/ApprovalLetter";
-import IQACHome from "./components/IQACHome";
-
-import AdminLogin from "./components/AdminLogin";
-import AdminDashboard from "./components/AdminDashboard";
-import AddStaff from "./components/AddStaff";
-import AddHod from "./components/AddHod";
-import AdminAllRequests from "./components/AdminAllRequests";
-
 import ProtectedRoute from "./components/ProtectedRoute";
+
+// Lazy load all other components for faster initial load
+const StaffHome = lazy(() => import("./components/StaffHome"));
+const RoleDashboard = lazy(() => import("./components/RoleDashboard"));
+const ApprovalLetter = lazy(() => import("./components/ApprovalLetter"));
+const IQACHome = lazy(() => import("./components/IQACHome"));
+const AdminLogin = lazy(() => import("./components/AdminLogin"));
+const AdminDashboard = lazy(() => import("./components/AdminDashboard"));
+const AddStaff = lazy(() => import("./components/AddStaff"));
+const AddHod = lazy(() => import("./components/AddHod"));
+const AdminAllRequests = lazy(() => import("./components/AdminAllRequests"));
 
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+
+// Loading spinner for lazy-loaded components
+const PageLoader = () => (
+  <div className="d-flex justify-content-center align-items-center" style={{ height: "100vh" }}>
+    <div className="text-center">
+      <div className="spinner-border text-primary" role="status" style={{ width: "3rem", height: "3rem" }}></div>
+      <p className="mt-3 text-muted">Loading...</p>
+    </div>
+  </div>
+);
 
 function App() {
   return (
     <>
       <ToastContainer position="top-right" autoClose={2000} />
 
-      <Routes>
-        {/* Default Login */}
-        <Route path="/" element={<Login />} />
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          {/* Default Login */}
+          <Route path="/" element={<Login />} />
 
-        {/* Admin Login */}
-        <Route path="/admin-login" element={<AdminLogin />} />
+          {/* Admin Login */}
+          <Route path="/admin-login" element={<AdminLogin />} />
 
         {/* Staff */}
         <Route
@@ -107,7 +119,8 @@ function App() {
             </ProtectedRoute>
           }
         />
-      </Routes>
+        </Routes>
+      </Suspense>
     </>
   );
 }

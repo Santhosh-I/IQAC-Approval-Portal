@@ -20,6 +20,7 @@ function RoleDashboard() {
 
   const user = JSON.parse(localStorage.getItem("user"));
   const [requests, setRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [comments, setComments] = useState({}); // comment per request
   
@@ -43,6 +44,7 @@ function RoleDashboard() {
   // LOAD REQUESTS FOR ROLE
   // ------------------------------------------
   const loadRequests = async () => {
+    setIsLoading(true);
     try {
       // If HOD, pass department to filter requests by their department
       const department = role === "HOD" ? user?.department : null;
@@ -50,6 +52,8 @@ function RoleDashboard() {
       setRequests(res.data);
     } catch {
       toast.error("Failed to load requests");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -227,7 +231,12 @@ function RoleDashboard() {
         </div>
       </div>
 
-      {filteredRequests.length === 0 ? (
+      {isLoading ? (
+        <div className="text-center py-5">
+          <span className="spinner-border text-primary"></span>
+          <p className="text-muted mt-2">Loading requests...</p>
+        </div>
+      ) : filteredRequests.length === 0 ? (
         <p className="text-muted">No requests found matching the filters</p>
       ) : (
         <table className="table table-bordered shadow">

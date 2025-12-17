@@ -8,6 +8,7 @@ export default function AdminAllRequests() {
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [requests, setRequests] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterDepartment, setFilterDepartment] = useState("");
   const [filterEventName, setFilterEventName] = useState("");
 
@@ -16,11 +17,14 @@ export default function AdminAllRequests() {
   }, []);
 
   const loadRequests = async () => {
+    setIsLoading(true);
     try {
       const res = await adminFetchAllRequests(user.role);
       setRequests(res.data);
     } catch (err) {
       toast.error("Failed to load all requests");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -158,15 +162,22 @@ export default function AdminAllRequests() {
             </thead>
 
             <tbody>
-              {filteredRequests.length === 0 && (
+              {isLoading ? (
+                <tr>
+                  <td colSpan="9" className="text-center py-4">
+                    <span className="spinner-border text-primary"></span>
+                    <p className="text-muted mt-2 mb-0">Loading requests...</p>
+                  </td>
+                </tr>
+              ) : filteredRequests.length === 0 ? (
                 <tr>
                   <td colSpan="9" className="text-center text-muted py-3">
                     No requests found
                   </td>
                 </tr>
-              )}
+              ) : null}
 
-              {filteredRequests.map((req, index) => (
+              {!isLoading && filteredRequests.map((req, index) => (
                 <tr key={req._id}>
                   <td>{index + 1}</td>
                   <td>{req.referenceNo || "-"}</td>
