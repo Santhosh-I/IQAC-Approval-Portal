@@ -25,6 +25,10 @@ function StaffHome() {
   const [purpose, setPurpose] = useState("");
   const [report, setReport] = useState(null);
 
+  // Duplicate event modal state
+  const [showDuplicateModal, setShowDuplicateModal] = useState(false);
+  const [duplicateMessage, setDuplicateMessage] = useState("");
+
   // Rejection details modal state
   const [showRejectionModal, setShowRejectionModal] = useState(false);
   const [selectedRejection, setSelectedRejection] = useState(null);
@@ -268,6 +272,7 @@ function StaffHome() {
   // MAIN RENDER
   // ----------------------------------------
   return (
+<<<<<<< HEAD
     <div className="dashboard-page">
       <div className="dashboard-wrapper">
         {/* HEADER */}
@@ -290,6 +295,115 @@ function StaffHome() {
               </div>
               <button className="btn-logout" onClick={logout}>
                 Logout
+=======
+    <div className="container mt-4">
+      {/* HEADER */}
+      <div className="d-flex justify-content-between align-items-center">
+        <h2 className="fw-bold text-primary">Staff Dashboard</h2>
+
+        <button className="btn btn-danger btn-sm" onClick={logout}>
+          Logout
+        </button>
+      </div>
+
+      <h5 className="text-secondary">Welcome, {user.name}</h5>
+      <hr />
+
+      {/* CREATE REQUEST */}
+      <div className="card shadow p-4">
+        <h4 className="fw-bold mb-3">Create Event Request</h4>
+
+        <form onSubmit={submit}>
+          <input
+            className="form-control mb-3"
+            placeholder="Event Name"
+            value={eventName}
+            onChange={(e) => setEventName(e.target.value)}
+            required
+          />
+
+          <input
+            className="form-control mb-3"
+            type="date"
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
+            required
+          />
+
+          <textarea
+            className="form-control mb-3"
+            placeholder="Purpose of Event"
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+            required
+          />
+
+          <input
+            className="form-control mb-3"
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                // Check if file is PDF
+                if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+                  toast.error("Only PDF files are allowed. Please upload a PDF file.");
+                  e.target.value = ""; // Clear the input
+                  setReport(null);
+                  return;
+                }
+                setReport(file);
+              }
+            }}
+            required
+          />
+          <small className="text-muted">Only PDF files are accepted</small>
+
+          <button type="submit" className="btn btn-primary w-100">Submit</button>
+        </form>
+      </div>
+
+      <hr className="my-4" />
+
+      {/* REQUEST LIST */}
+      <h3 className="fw-bold">Your Requests</h3>
+
+      {requests.length === 0 && (
+        <p className="text-muted">No requests submitted yet.</p>
+      )}
+
+      {requests.map((req) => {
+        const bgColor = getStatusColor(req);
+
+        const isApproved =
+          req.isCompleted ||
+          (req.overallStatus || "").toLowerCase().includes("completed");
+
+        return (
+          <div
+            key={req._id}
+            className="card p-3 mt-3 shadow-sm"
+            style={{
+              backgroundColor: bgColor,
+              borderLeft: "6px solid rgba(0,0,0,0.2)",
+            }}
+          >
+            <h5 className="fw-bold">{req.eventName}</h5>
+            <p>
+              <b>Date:</b> {req.eventDate}
+            </p>
+            <p>
+              <b>Status:</b> {req.overallStatus}
+            </p>
+
+            {/* VIEW FILE */}
+            {req.reportUrl && (
+              <button
+                className="btn btn-secondary btn-sm mt-2 w-100"
+                onClick={() => handleViewReport(req._id)}
+              >
+                View Uploaded File
+>>>>>>> bae7cf956ba50e58851e1b351b5c8482c2718ba9
               </button>
             </div>
           </div>
@@ -647,6 +761,49 @@ function StaffHome() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* DUPLICATE EVENT WARNING MODAL */}
+      {showDuplicateModal && (
+        <div
+          className="modal show d-block"
+          style={{ backgroundColor: "rgba(0,0,0,0.5)" }}
+          onClick={() => setShowDuplicateModal(false)}
+        >
+          <div
+            className="modal-dialog modal-dialog-centered"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="modal-content border-0 shadow-lg">
+              <div className="modal-header bg-warning text-dark border-0">
+                <h5 className="modal-title fw-bold">⚠️ Duplicate Event Detected</h5>
+                <button
+                  className="btn-close"
+                  onClick={() => setShowDuplicateModal(false)}
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="alert alert-warning mb-0">
+                  <p className="mb-2"><strong>{duplicateMessage}</strong></p>
+                  <hr />
+                  <p className="mb-0 text-muted">
+                    <small>
+                      💡 <strong>Suggestion:</strong> Please choose a different event name or modify the purpose to make it unique.
+                    </small>
+                  </p>
+                </div>
+              </div>
+              <div className="modal-footer border-0">
+                <button
+                  className="btn btn-primary px-4"
+                  onClick={() => setShowDuplicateModal(false)}
+                >
+                  Got it
+                </button>
+              </div>
             </div>
           </div>
         </div>

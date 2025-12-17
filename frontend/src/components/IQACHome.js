@@ -4,6 +4,7 @@ import {
   actOnRequest,
   approvalLetterUrl,
   getFreshReportUrl,
+  checkReferenceNumber,
 } from "../api";
 import { toast } from "react-toastify";
 import { useNavigate } from "react-router-dom";
@@ -26,6 +27,7 @@ function IQACHome() {
   const [refNumbers, setRefNumbers] = useState({}); // per request
   const [workflows, setWorkflows] = useState({}); // per request
   const [comments, setComments] = useState({}); // comments per request
+  const [refWarnings, setRefWarnings] = useState({}); // warnings for duplicate ref numbers
 
   const flowOptions = ["HOD", "PRINCIPAL", "DIRECTOR", "AO", "CEO"];
 
@@ -76,6 +78,30 @@ function IQACHome() {
   };
 
   // ------------------------------------
+  // CHECK REFERENCE NUMBER UNIQUENESS
+  // ------------------------------------
+  const checkRefNumberUniqueness = async (refNumber, requestId) => {
+    if (refNumber.length !== 8) {
+      setRefWarnings((prev) => ({ ...prev, [requestId]: "" }));
+      return;
+    }
+
+    try {
+      const res = await checkReferenceNumber(refNumber);
+      if (res.data.exists) {
+        setRefWarnings((prev) => ({
+          ...prev,
+          [requestId]: `⚠️ This reference number is already used for event: "${res.data.eventName}"`,
+        }));
+      } else {
+        setRefWarnings((prev) => ({ ...prev, [requestId]: "" }));
+      }
+    } catch (err) {
+      console.error("Error checking reference number:", err);
+    }
+  };
+
+  // ------------------------------------
   // APPROVE
   // ------------------------------------
   const handleApprove = async (id) => {
@@ -83,9 +109,14 @@ function IQACHome() {
     const refNumber = refNumbers[id] || "";
     const flowRoles = workflows[id] || [];
 
-    // Reference number must be exactly 8 digits
-    if (!/^\d{8}$/.test(refNumber)) {
-      return toast.error("Reference number must be exactly 8 digits (numbers only).");
+    // Reference number must be exactly 8 alphanumeric characters
+    if (!/^[A-Z0-9]{8}$/.test(refNumber)) {
+      return toast.error("Reference number must be exactly 8 characters (letters and numbers only).");
+    }
+
+    // Check if reference number is duplicate
+    if (refWarnings[id]) {
+      return toast.error("Cannot approve: Reference number is already in use. Please use a unique reference.");
     }
 
     // At least one next approver required
@@ -153,6 +184,7 @@ function IQACHome() {
   );
 
   return (
+<<<<<<< HEAD
     <div className="dashboard-page">
       <div className="dashboard-wrapper">
         {/* HEADER */}
@@ -176,6 +208,140 @@ function IQACHome() {
               <button className="btn-logout" onClick={logout}>
                 Logout
               </button>
+=======
+    <div className="container mt-4">
+
+      {/* HEADER */}
+      <div className="d-flex justify-content-between align-items-center">
+        <h2 className="fw-bold text-primary">IQAC Dashboard</h2>
+
+        <button className="btn btn-danger btn-sm" onClick={logout}>
+          Logout
+        </button>
+      </div>
+
+      <p className="text-muted">
+        Review event requests, assign workflow, approve or recreate.
+      </p>
+      <hr />
+
+      <div className="row">
+        {requests.map((req) => (
+          <div className="col-md-4" key={req._id}>
+            <div className="card shadow p-3 mb-4">
+
+              {/* BASIC DETAILS */}
+              <h5 className="fw-bold">{req.eventName}</h5>
+              <p><b>Event Date:</b> {req.eventDate}</p>
+              <p><b>Staff:</b> {req.staffName}</p>
+              <p><b>Status:</b> {req.overallStatus}</p>
+
+              {/* VIEW REPORT FILE */}
+              {req.reportUrl && (
+                <button
+                  className="btn btn-link p-0 mt-2"
+                  onClick={() => handleViewReport(req._id)}
+                >
+                  View Uploaded Report
+                </button>
+              )}
+
+              {/* SHOW APPROVAL REPORT WHEN COMPLETED */}
+              {req.isCompleted && (
+                <button
+                  className="btn btn-success btn-sm mt-3 w-100"
+                  onClick={() => window.open(approvalLetterUrl(req._id), "_blank")}
+                >
+                  Generate Approval Report
+                </button>
+              )}
+
+              {/* SHOW IQAC ACTIONS ONLY WHEN WAITING FOR IQAC */}
+              {req.currentRole === role && (
+                <>
+                  <hr />
+
+                  {/* REFERENCE NO */}
+                  <label className="fw-bold">Reference Number (8 characters)</label>
+                  <input
+                    type="text"
+                    className={`form-control ${refWarnings[req._id] ? 'border-warning' : ''}`}
+                    maxLength="8"
+                    placeholder="Enter 8 character reference"
+                    value={refNumbers[req._id] || ""}
+                    onChange={(e) => {
+                      // Only allow alphanumeric characters (letters and numbers)
+                      const value = e.target.value.replace(/[^A-Za-z0-9]/g, "").toUpperCase();
+                      setRefNumbers((prev) => ({
+                        ...prev,
+                        [req._id]: value,
+                      }));
+                      // Check uniqueness when user types
+                      checkRefNumberUniqueness(value, req._id);
+                    }}
+                  />
+                  {refWarnings[req._id] ? (
+                    <small className="text-warning d-block mb-2">
+                      <strong>{refWarnings[req._id]}</strong>
+                    </small>
+                  ) : (
+                    <small className="text-muted d-block mb-2">Letters and numbers only, 8 characters (e.g., AB123456)</small>
+                  )}
+
+                  {/* WORKFLOW ROLES */}
+                  <label className="fw-bold">Select Workflow Roles</label>
+                  {flowOptions.map((r) => (
+                    <div key={r}>
+                      <input
+                        type="checkbox"
+                        checked={(workflows[req._id] || []).includes(r)}
+                        onChange={() =>
+                          setWorkflows((prev) => {
+                            const current = prev[req._id] || [];
+                            return {
+                              ...prev,
+                              [req._id]: current.includes(r)
+                                ? current.filter((x) => x !== r)
+                                : [...current, r],
+                            };
+                          })
+                        }
+                      />
+                      <label className="ms-2">{r}</label>
+                    </div>
+                  ))}
+
+                  <hr />
+
+                  {/* COMMENTS */}
+                  <label className="fw-bold">Comments</label>
+                  <textarea
+                    className="form-control mb-3"
+                    placeholder="Enter comments (required for recreate)"
+                    value={comments[req._id] || ""}
+                    onChange={(e) =>
+                      handleCommentChange(req._id, e.target.value)
+                    }
+                  />
+
+                  {/* ACTION BUTTONS */}
+                  <button
+                    className="btn btn-primary btn-sm me-2"
+                    onClick={() => handleApprove(req._id)}
+                  >
+                    Approve
+                  </button>
+
+                  <button
+                    className="btn btn-warning btn-sm"
+                    onClick={() => handleRecreate(req._id)}
+                  >
+                    Recreate
+                  </button>
+                </>
+              )}
+
+>>>>>>> bae7cf956ba50e58851e1b351b5c8482c2718ba9
             </div>
           </div>
         </div>

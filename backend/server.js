@@ -136,8 +136,11 @@ async function createDefaultRoles() {
 }
 
 // ===============================
-// DEFAULT STAFF USERS (OPTIONAL)
+// DEFAULT STAFF USERS (OPTIONAL) - DISABLED
 // ===============================
+// Commented out to prevent automatic staff creation on server start
+// Staffs should be created through Admin Dashboard instead
+/*
 async function createDefaultStaffs() {
   const staffs = [
     {
@@ -180,6 +183,7 @@ async function createDefaultStaffs() {
     }
   }
 }
+*/
 
 // ===============================
 // DATABASE CONNECT
@@ -189,7 +193,7 @@ mongoose
   .then(async () => {
     console.log("MongoDB Connected (Atlas)");
     await createDefaultRoles();
-    await createDefaultStaffs();
+    // await createDefaultStaffs(); // DISABLED - Create staffs through Admin Dashboard instead
     
     // Fix old requests that have 'HOD' in workflowRoles
     const fixedCount = await Request.updateMany(
@@ -409,7 +413,11 @@ app.post("/api/requests", upload.single("event_report"), async (req, res) => {
       const namesSimilar = areTextsSimilar(existingReq.eventName, event_name, 0.7);
       const purposesSimilar = areTextsSimilar(existingReq.purpose, purpose, 0.6);
       
-      if (namesSimilar && purposesSimilar) {
+      // If event names are highly similar (exact or near-exact match)
+      const namesVerySimilar = areTextsSimilar(existingReq.eventName, event_name, 0.9);
+      
+      // Block if: names are very similar OR (names similar AND purposes similar)
+      if (namesVerySimilar || (namesSimilar && purposesSimilar)) {
         return res.status(400).json({ 
           error: `A similar event request has already been created by ${existingReq.staffName} in your department: "${existingReq.eventName}".` 
         });
@@ -487,6 +495,31 @@ app.put("/api/requests/:id/resubmit", upload.single("event_report"), async (req,
     res.json({ message: "Request resubmitted successfully", request: doc });
   } catch (e) {
     console.error("Resubmit error:", e);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+// ===============================
+// CHECK REFERENCE NUMBER UNIQUENESS (Must be before /:id routes)
+// ===============================
+app.get("/api/requests/check-reference/:refNumber", async (req, res) => {
+  try {
+    const { refNumber } = req.params;
+    
+    // Find any request with this reference number
+    const existingRequest = await Request.findOne({ referenceNo: refNumber });
+    
+    if (existingRequest) {
+      return res.json({
+        exists: true,
+        eventName: existingRequest.eventName,
+        staffName: existingRequest.staffName,
+      });
+    }
+    
+    res.json({ exists: false });
+  } catch (e) {
+    console.error("Error checking reference number:", e);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -699,10 +732,28 @@ app.post("/api/requests/:id/action", async (req, res) => {
 
     // IQAC special logic
     if (role === "IQAC" && action === "approve") {
-      doc.referenceNo = refNumber;
+      // Check if reference number is already in use
+      if (refNumber) {
+        // Convert to uppercase for consistency
+        const normalizedRefNumber = refNumber.toUpperCase().trim();
+        
+        const existingRef = await Request.findOne({ 
+          referenceNo: normalizedRefNumber,
+          _id: { $ne: req.params.id } // Exclude current request
+        });
+        
+        if (existingRef) {
+          return res.status(400).json({ 
+            error: `Reference number ${normalizedRefNumber} is already assigned to event: "${existingRef.eventName}". Please use a unique reference number.` 
+          });
+        }
+        
+        doc.referenceNo = normalizedRefNumber;
+      }
+      
       doc.workflowRoles = normalizeFlow(flow);
       
-      console.log("IQAC Approval - Reference Number:", refNumber);
+      console.log("IQAC Approval - Reference Number:", doc.referenceNo);
       console.log("IQAC Approval - Flow received:", flow);
       console.log("IQAC Approval - Normalized workflowRoles:", doc.workflowRoles);
       
@@ -760,25 +811,21 @@ app.get("/api/requests/:id/approval-letter", async (req, res) => {
     const doc = await Request.findById(req.params.id);
     if (!doc) return res.status(404).send("Not found");
 
-    // Include HOD at the beginning of the flow
-    const flow = ["HOD", "IQAC", ...(doc.workflowRoles || [])];
-
-    const rows = flow
-      .map((r) => {
-        const a = doc.approvals.find((x) => x.role === r);
-
+    // Show ALL approvals in chronological order (not just unique roles)
+    const rows = (doc.approvals || [])
+      .map((a) => {
         return `
         <tr>
-          <td style="padding: 8px; border: 1px solid #ddd;">${r}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${a.role}</td>
           <td style="padding: 8px; border: 1px solid #ddd;">${
-            a?.status === "Approved"
+            a.status === "Approved"
               ? "✔ Approved"
-              : a?.status === "Recreated"
+              : a.status === "Recreated"
               ? "↩ Recreated"
-              : "Pending"
+              : a.status || "Pending"
           }</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${a ? a.comments : "-"}</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${a ? new Date(a.decidedAt).toLocaleString() : "-"}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${a.comments || "-"}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${a.decidedAt ? new Date(a.decidedAt).toLocaleString() : "-"}</td>
         </tr>`;
       })
       .join("");
