@@ -36,4 +36,13 @@ const requestSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Add indexes for faster queries
+requestSchema.index({ staffId: 1 });
+requestSchema.index({ currentRole: 1 });
+requestSchema.index({ department: 1 });
+requestSchema.index({ currentRole: 1, department: 1 });
+requestSchema.index({ createdAt: -1 });
+requestSchema.index({ staffId: 1, eventName: 1 });
+requestSchema.index({ department: 1, staffId: 1 });
+
 module.exports = mongoose.model("Request", requestSchema);

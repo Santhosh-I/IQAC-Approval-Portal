@@ -19,6 +19,8 @@ export default function AdminDashboard() {
 
   const [staffList, setStaffList] = useState([]);
   const [hodList, setHodList] = useState([]);
+  const [loadingStaff, setLoadingStaff] = useState(true);
+  const [loadingHod, setLoadingHod] = useState(true);
 
   useEffect(() => {
     loadStaffs();
@@ -38,15 +40,19 @@ export default function AdminDashboard() {
   }, []);
 
   const loadStaffs = async () => {
+    setLoadingStaff(true);
     try {
       const res = await adminGetAllStaff(role);
       setStaffList(res.data.staffs);
     } catch {
       toast.error("Failed to load staff list");
+    } finally {
+      setLoadingStaff(false);
     }
   };
 
   const loadHods = async () => {
+    setLoadingHod(true);
     try {
       const depRes = await adminGetDepartments(role);
       const deps = depRes.data.departments || [];
@@ -65,6 +71,8 @@ export default function AdminDashboard() {
       setHodList(results);
     } catch {
       toast.error("Failed to load HOD list");
+    } finally {
+      setLoadingHod(false);
     }
   };
 
@@ -214,6 +222,7 @@ export default function AdminDashboard() {
           </div>
         </div>
 
+<<<<<<< HEAD
         {/* ALL STAFFS TABLE */}
         <div className="dashboard-card fade-in">
           <div className="dashboard-card-header">
@@ -243,6 +252,39 @@ export default function AdminDashboard() {
                         </div>
                       </td>
                     </tr>
+=======
+      </div>
+
+      {/* ALL HODs TABLE */}
+      <div className="card shadow p-4 mt-5">
+        <h5>All HODs</h5>
+        {loadingHod ? (
+          <div className="text-center py-4">
+            <span className="spinner-border text-primary"></span>
+            <p className="text-muted mt-2">Loading HODs...</p>
+          </div>
+        ) : (
+        <table className="table table-bordered table-striped mt-3">
+          <thead className="table-dark">
+            <tr>
+              <th>Department</th>
+              <th>HOD Name</th>
+              <th>Password</th>
+              <th>Status</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {hodList.map((h) => (
+              <tr key={h.department}>
+                <td>{h.department}</td>
+                <td>{h.hod ? h.hod.name : "—"}</td>
+                <td>{h.hod ? h.hod.password : "—"}</td>
+                <td>
+                  {h.hod ? (
+                    <span className="badge bg-success">Assigned</span>
+>>>>>>> f4eb033c0a1d6257222563fa780352e37444fa24
                   ) : (
                     staffList.map((s) => (
                       <tr key={s._id}>
@@ -267,6 +309,7 @@ export default function AdminDashboard() {
                       </tr>
                     ))
                   )}
+<<<<<<< HEAD
                 </tbody>
               </table>
             </div>
@@ -284,6 +327,78 @@ export default function AdminDashboard() {
             </div>
           </div>
         </div>
+=======
+                </td>
+                <td>
+                  <button
+                    className="btn btn-warning btn-sm me-2"
+                    onClick={() => handleEditHod(h.department)}
+                  >
+                    {h.hod ? "Edit" : "Assign"}
+                  </button>
+                  {h.hod && (
+                    <button
+                      className="btn btn-danger btn-sm"
+                      onClick={() => handleUnassignHod(h.department)}
+                    >
+                      Unassign
+                    </button>
+                  )}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        )}
+      </div>
+
+      {/* ALL STAFFS TABLE */}
+      <div className="card shadow p-4 mt-4">
+        <h5>All Staffs</h5>
+        {loadingStaff ? (
+          <div className="text-center py-4">
+            <span className="spinner-border text-primary"></span>
+            <p className="text-muted mt-2">Loading staff...</p>
+          </div>
+        ) : (
+        <table className="table table-bordered table-striped mt-3">
+          <thead className="table-dark">
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Department</th>
+              <th>Password</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {staffList.map((s) => (
+              <tr key={s._id}>
+                <td>{s.name}</td>
+                <td>{s.email}</td>
+                <td>{s.department}</td>
+                <td>{s.password}</td>
+                <td>
+                  <button
+                    className="btn btn-warning btn-sm me-2"
+                    onClick={() => handleEdit(s)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDelete(s._id)}
+                  >
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        )}
+>>>>>>> f4eb033c0a1d6257222563fa780352e37444fa24
       </div>
     </div>
   );

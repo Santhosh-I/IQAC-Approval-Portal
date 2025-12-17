@@ -41,6 +41,10 @@ function StaffHome() {
   const [editPurpose, setEditPurpose] = useState("");
   const [editReport, setEditReport] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Loading states for better UX
+  const [isLoading, setIsLoading] = useState(true);
+  const [isCreating, setIsCreating] = useState(false);
 
   const storedUser = localStorage.getItem("user");
   const user = storedUser ? JSON.parse(storedUser) : null;
@@ -58,12 +62,15 @@ function StaffHome() {
   // LOAD STAFF REQUESTS
   // ----------------------------------------
   const loadRequests = async () => {
+    setIsLoading(true);
     try {
       if (!staffId) return;
       const res = await fetchStaffRequests(staffId);
       setRequests(res.data);
     } catch (err) {
       toast.error("Failed to load requests");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -193,6 +200,8 @@ function StaffHome() {
       return toast.error("Please upload event report file");
     }
 
+    setIsCreating(true);
+
     const formData = new FormData();
     formData.append("staffId", staffId);
     formData.append("event_name", eventName);
@@ -211,6 +220,10 @@ function StaffHome() {
 
       loadRequests();
     } catch (err) {
+<<<<<<< HEAD
+=======
+      // Check if it's a duplicate event error
+>>>>>>> f4eb033c0a1d6257222563fa780352e37444fa24
       if (err.response && err.response.data && err.response.data.error) {
         const errorMsg = err.response.data.error;
         
@@ -223,6 +236,8 @@ function StaffHome() {
       } else {
         toast.error("Failed to submit request");
       }
+    } finally {
+      setIsCreating(false);
     }
   };
 
@@ -254,6 +269,7 @@ function StaffHome() {
   // MAIN RENDER
   // ----------------------------------------
   return (
+<<<<<<< HEAD
     <div className="dashboard-page">
       <div className="dashboard-wrapper">
         {/* HEADER */}
@@ -276,6 +292,126 @@ function StaffHome() {
               </div>
               <button className="btn-logout" onClick={logout}>
                 Logout
+=======
+    <div className="container mt-4">
+      {/* HEADER */}
+      <div className="d-flex justify-content-between align-items-center">
+        <h2 className="fw-bold text-primary">Staff Dashboard</h2>
+
+        <button className="btn btn-danger btn-sm" onClick={logout}>
+          Logout
+        </button>
+      </div>
+
+      <h5 className="text-secondary">Welcome, {user.name}</h5>
+      <hr />
+
+      {/* CREATE REQUEST */}
+      <div className="card shadow p-4">
+        <h4 className="fw-bold mb-3">Create Event Request</h4>
+
+        <form onSubmit={submit}>
+          <input
+            className="form-control mb-3"
+            placeholder="Event Name"
+            value={eventName}
+            onChange={(e) => setEventName(e.target.value)}
+            required
+          />
+
+          <input
+            className="form-control mb-3"
+            type="date"
+            value={eventDate}
+            onChange={(e) => setEventDate(e.target.value)}
+            required
+          />
+
+          <textarea
+            className="form-control mb-3"
+            placeholder="Purpose of Event"
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+            required
+          />
+
+          <input
+            className="form-control mb-3"
+            type="file"
+            accept=".pdf,application/pdf"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                // Check if file is PDF
+                if (file.type !== "application/pdf" && !file.name.toLowerCase().endsWith(".pdf")) {
+                  toast.error("Only PDF files are allowed. Please upload a PDF file.");
+                  e.target.value = ""; // Clear the input
+                  setReport(null);
+                  return;
+                }
+                setReport(file);
+              }
+            }}
+            required
+          />
+          <small className="text-muted">Only PDF files are accepted</small>
+
+          <button type="submit" className="btn btn-primary w-100" disabled={isCreating}>
+            {isCreating ? (
+              <><span className="spinner-border spinner-border-sm me-2"></span>Submitting...</>
+            ) : (
+              "Submit"
+            )}
+          </button>
+        </form>
+      </div>
+
+      <hr className="my-4" />
+
+      {/* REQUEST LIST */}
+      <h3 className="fw-bold">Your Requests</h3>
+
+      {isLoading ? (
+        <div className="text-center py-4">
+          <span className="spinner-border text-primary"></span>
+          <p className="text-muted mt-2">Loading requests...</p>
+        </div>
+      ) : requests.length === 0 ? (
+        <p className="text-muted">No requests submitted yet.</p>
+      ) : null}
+
+      {!isLoading && requests.map((req) => {
+        const bgColor = getStatusColor(req);
+
+        const isApproved =
+          req.isCompleted ||
+          (req.overallStatus || "").toLowerCase().includes("completed");
+
+        return (
+          <div
+            key={req._id}
+            className="card p-3 mt-3 shadow-sm"
+            style={{
+              backgroundColor: bgColor,
+              borderLeft: "6px solid rgba(0,0,0,0.2)",
+            }}
+          >
+            <h5 className="fw-bold">{req.eventName}</h5>
+            <p>
+              <b>Date:</b> {req.eventDate}
+            </p>
+            <p>
+              <b>Status:</b> {req.overallStatus}
+            </p>
+
+            {/* VIEW FILE */}
+            {req.reportUrl && (
+              <button
+                className="btn btn-secondary btn-sm mt-2 w-100"
+                onClick={() => handleViewReport(req._id)}
+              >
+                View Uploaded File
+>>>>>>> f4eb033c0a1d6257222563fa780352e37444fa24
               </button>
             </div>
           </div>

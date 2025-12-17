@@ -4,6 +4,7 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
+const compression = require("compression");
 const multer = require("multer");
 const dotenv = require("dotenv");
 const fs = require("fs");
@@ -21,6 +22,7 @@ const Request = require("./models/Request");
 
 // APP SETUP
 const app = express();
+app.use(compression()); // Enable gzip compression for faster responses
 app.use(express.json());
 app.use(cors({
   origin: '*',
@@ -389,11 +391,20 @@ app.post("/api/requests", upload.single("event_report"), async (req, res) => {
   try {
     const { staffId, event_name, event_date, purpose } = req.body;
 
-    const staff = await Staff.findById(staffId);
+    // Run staff lookup and file upload in parallel for speed
+    const [staff, fileUrl] = await Promise.all([
+      Staff.findById(staffId).lean(),
+      req.file ? uploadToS3(req.file) : Promise.resolve(null)
+    ]);
+
     if (!staff) return res.status(400).json({ error: "Invalid staffId" });
 
+    // OPTIMIZED: Only fetch needed fields using projection, use lean() for speed
     // CONDITION 1: Check if same staff has created similar event before
-    const staffRequests = await Request.find({ staffId });
+    const staffRequests = await Request.find(
+      { staffId },
+      { eventName: 1, staffName: 1 }
+    ).lean();
     
     for (const existingReq of staffRequests) {
       if (areTextsSimilar(existingReq.eventName, event_name, 0.7)) {
@@ -404,10 +415,14 @@ app.post("/api/requests", upload.single("event_report"), async (req, res) => {
     }
 
     // CONDITION 2: Check if any staff in same department has created similar event
-    const departmentRequests = await Request.find({ 
-      department: staff.department,
-      staffId: { $ne: staffId } // Exclude current staff's requests (already checked above)
-    });
+    // OPTIMIZED: Only fetch needed fields
+    const departmentRequests = await Request.find(
+      { 
+        department: staff.department,
+        staffId: { $ne: staffId }
+      },
+      { eventName: 1, purpose: 1, staffName: 1 }
+    ).lean();
     
     for (const existingReq of departmentRequests) {
       const namesSimilar = areTextsSimilar(existingReq.eventName, event_name, 0.7);
@@ -422,12 +437,6 @@ app.post("/api/requests", upload.single("event_report"), async (req, res) => {
           error: `A similar event request has already been created by ${existingReq.staffName} in your department: "${existingReq.eventName}".` 
         });
       }
-    }
-
-    let fileUrl = null;
-
-    if (req.file) {
-      fileUrl = await uploadToS3(req.file);
     }
 
     const newReq = await Request.create({
