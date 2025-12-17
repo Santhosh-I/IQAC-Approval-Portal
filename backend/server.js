@@ -760,25 +760,21 @@ app.get("/api/requests/:id/approval-letter", async (req, res) => {
     const doc = await Request.findById(req.params.id);
     if (!doc) return res.status(404).send("Not found");
 
-    // Include HOD at the beginning of the flow
-    const flow = ["HOD", "IQAC", ...(doc.workflowRoles || [])];
-
-    const rows = flow
-      .map((r) => {
-        const a = doc.approvals.find((x) => x.role === r);
-
+    // Show ALL approvals in chronological order (not just unique roles)
+    const rows = (doc.approvals || [])
+      .map((a) => {
         return `
         <tr>
-          <td style="padding: 8px; border: 1px solid #ddd;">${r}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${a.role}</td>
           <td style="padding: 8px; border: 1px solid #ddd;">${
-            a?.status === "Approved"
+            a.status === "Approved"
               ? "✔ Approved"
-              : a?.status === "Recreated"
+              : a.status === "Recreated"
               ? "↩ Recreated"
-              : "Pending"
+              : a.status || "Pending"
           }</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${a ? a.comments : "-"}</td>
-          <td style="padding: 8px; border: 1px solid #ddd;">${a ? new Date(a.decidedAt).toLocaleString() : "-"}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${a.comments || "-"}</td>
+          <td style="padding: 8px; border: 1px solid #ddd;">${a.decidedAt ? new Date(a.decidedAt).toLocaleString() : "-"}</td>
         </tr>`;
       })
       .join("");
