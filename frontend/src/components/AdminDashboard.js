@@ -8,6 +8,8 @@ import {
   adminDeleteHod 
 } from "../api";
 import { toast } from "react-toastify";
+import "./Dashboard.css";
+import logo from '../assets/kite-logo.png';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -105,144 +107,183 @@ export default function AdminDashboard() {
   };
 
   return (
-    <div className="container mt-5">
-      <h2 className="text-center mb-4">Admin Dashboard</h2>
-
-      <div className="text-end mb-3">
-        <span className="me-3 fw-bold text-primary">Welcome, {user?.name}</span>
-        <button className="btn btn-danger btn-sm" onClick={logout}>
-          Logout
-        </button>
-      </div>
-
-      <div className="row g-4 justify-content-center">
-
-        {/* Add Staff */}
-        <div className="col-md-4">
-          <div
-            className="card shadow text-center p-4"
-            style={{ cursor: "pointer" }}
-            onClick={() => navigate("/admin/add-staff")}
-          >
-            <h4>Add Staff</h4>
-            <p className="text-muted">Create new staff accounts</p>
+    <div className="dashboard-page">
+      <div className="dashboard-wrapper">
+        {/* HEADER */}
+        <div className="dashboard-header fade-in">
+          <div className="dashboard-header-accent"></div>
+          <div className="dashboard-header-content">
+            <div className="dashboard-header-left">
+              <div className="dashboard-logo-box">
+                <img src={logo} alt="KITE Logo" className="dashboard-logo" />
+              </div>
+              <div className="dashboard-title-section">
+                <h1>Admin Dashboard</h1>
+                <p>IQAC Approval Portal Management</p>
+              </div>
+            </div>
+            <div className="dashboard-header-right">
+              <div className="dashboard-user-info">
+                <div className="dashboard-user-name">Welcome, {user?.name}</div>
+                <div className="dashboard-user-role">Administrator</div>
+              </div>
+              <button className="btn-logout" onClick={logout}>
+                Logout
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Add HOD */}
-        <div className="col-md-4">
-          <div
-            className="card shadow text-center p-4"
-            style={{ cursor: "pointer" }}
-            onClick={() => navigate("/admin/add-hod")}
-          >
-            <h4>Add HOD</h4>
-            <p className="text-muted">Assign HOD for each department</p>
+        {/* ACTION CARDS */}
+        <div className="row g-4 mb-4">
+          <div className="col-md-4">
+            <div className="action-card fade-in" onClick={() => navigate("/admin/add-staff")}>
+              <div className="action-card-icon">👤</div>
+              <h4>Add Staff</h4>
+              <p>Create new staff accounts</p>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="action-card fade-in" onClick={() => navigate("/admin/add-hod")}>
+              <div className="action-card-icon">👨‍💼</div>
+              <h4>Add HOD</h4>
+              <p>Assign HOD for each department</p>
+            </div>
+          </div>
+          <div className="col-md-4">
+            <div className="action-card fade-in" onClick={() => navigate("/admin/all-requests")}>
+              <div className="action-card-icon">📋</div>
+              <h4>All Requests</h4>
+              <p>View every request submitted by staff</p>
+            </div>
           </div>
         </div>
 
-        {/* All Requests */}
-        <div className="col-md-4">
-          <div
-            className="card shadow text-center p-4"
-            style={{ cursor: "pointer" }}
-            onClick={() => navigate("/admin/all-requests")}
-          >
-            <h4>All Requests</h4>
-            <p className="text-muted">View every request submitted by staff</p>
+        {/* ALL HODs TABLE */}
+        <div className="dashboard-card mb-4 fade-in">
+          <div className="dashboard-card-header">
+            <h4>👨‍💼 All HODs</h4>
+            <p>Department head assignments</p>
+          </div>
+          <div className="dashboard-card-body">
+            <div className="table-responsive">
+              <table className="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Department</th>
+                    <th>HOD Name</th>
+                    <th>Password</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hodList.map((h) => (
+                    <tr key={h.department}>
+                      <td><strong>{h.department}</strong></td>
+                      <td>{h.hod ? h.hod.name : "—"}</td>
+                      <td>{h.hod ? h.hod.password : "—"}</td>
+                      <td>
+                        {h.hod ? (
+                          <span className="badge-custom badge-approved">Assigned</span>
+                        ) : (
+                          <span className="badge-custom badge-rejected">Not Assigned</span>
+                        )}
+                      </td>
+                      <td>
+                        <button
+                          className="btn-warning-custom btn-sm-custom me-2"
+                          onClick={() => handleEditHod(h.department)}
+                        >
+                          {h.hod ? "Edit" : "Assign"}
+                        </button>
+                        {h.hod && (
+                          <button
+                            className="btn-danger-custom btn-sm-custom"
+                            onClick={() => handleUnassignHod(h.department)}
+                          >
+                            Unassign
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-      </div>
-
-      {/* ALL HODs TABLE */}
-      <div className="card shadow p-4 mt-5">
-        <h5>All HODs</h5>
-        <table className="table table-bordered table-striped mt-3">
-          <thead className="table-dark">
-            <tr>
-              <th>Department</th>
-              <th>HOD Name</th>
-              <th>Password</th>
-              <th>Status</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {hodList.map((h) => (
-              <tr key={h.department}>
-                <td>{h.department}</td>
-                <td>{h.hod ? h.hod.name : "—"}</td>
-                <td>{h.hod ? h.hod.password : "—"}</td>
-                <td>
-                  {h.hod ? (
-                    <span className="badge bg-success">Assigned</span>
+        {/* ALL STAFFS TABLE */}
+        <div className="dashboard-card fade-in">
+          <div className="dashboard-card-header">
+            <h4>👥 All Staff Members</h4>
+            <p>Registered staff accounts</p>
+          </div>
+          <div className="dashboard-card-body">
+            <div className="table-responsive">
+              <table className="dashboard-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Department</th>
+                    <th>Password</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {staffList.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="text-center py-4">
+                        <div className="empty-state">
+                          <div className="empty-state-icon">👥</div>
+                          <h4>No staff members yet</h4>
+                          <p>Add your first staff member to get started</p>
+                        </div>
+                      </td>
+                    </tr>
                   ) : (
-                    <span className="badge bg-danger">Not Assigned</span>
+                    staffList.map((s) => (
+                      <tr key={s._id}>
+                        <td><strong>{s.name}</strong></td>
+                        <td>{s.email}</td>
+                        <td><span className="badge-custom badge-processing">{s.department}</span></td>
+                        <td>{s.password}</td>
+                        <td>
+                          <button
+                            className="btn-warning-custom btn-sm-custom me-2"
+                            onClick={() => handleEdit(s)}
+                          >
+                            Edit
+                          </button>
+                          <button
+                            className="btn-danger-custom btn-sm-custom"
+                            onClick={() => handleDelete(s._id)}
+                          >
+                            Delete
+                          </button>
+                        </td>
+                      </tr>
+                    ))
                   )}
-                </td>
-                <td>
-                  <button
-                    className="btn btn-warning btn-sm me-2"
-                    onClick={() => handleEditHod(h.department)}
-                  >
-                    {h.hod ? "Edit" : "Assign"}
-                  </button>
-                  {h.hod && (
-                    <button
-                      className="btn btn-danger btn-sm"
-                      onClick={() => handleUnassignHod(h.department)}
-                    >
-                      Unassign
-                    </button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
 
-      {/* ALL STAFFS TABLE */}
-      <div className="card shadow p-4 mt-4">
-        <h5>All Staffs</h5>
-        <table className="table table-bordered table-striped mt-3">
-          <thead className="table-dark">
-            <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Department</th>
-              <th>Password</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {staffList.map((s) => (
-              <tr key={s._id}>
-                <td>{s.name}</td>
-                <td>{s.email}</td>
-                <td>{s.department}</td>
-                <td>{s.password}</td>
-                <td>
-                  <button
-                    className="btn btn-warning btn-sm me-2"
-                    onClick={() => handleEdit(s)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    className="btn btn-danger btn-sm"
-                    onClick={() => handleDelete(s._id)}
-                  >
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {/* FOOTER */}
+        <div className="dashboard-footer fade-in">
+          <div className="dashboard-footer-content">
+            <div className="dashboard-footer-brand">
+              <span>IQAC Approval Portal</span>
+            </div>
+            <div className="dashboard-footer-text">
+              © 2025 KGiSL Institute of Technology. All rights reserved.
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
