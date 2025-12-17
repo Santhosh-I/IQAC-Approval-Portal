@@ -23,6 +23,10 @@ function RoleDashboard() {
 
   const [comments, setComments] = useState({}); // comment per request
   
+  // Filter states
+  const [filterDepartment, setFilterDepartment] = useState("");
+  const [filterEventName, setFilterEventName] = useState("");
+  
   // Modal state for viewing remarks
   const [showRemarksModal, setShowRemarksModal] = useState(false);
   const [selectedRequestRemarks, setSelectedRequestRemarks] = useState(null);
@@ -148,6 +152,16 @@ function RoleDashboard() {
     );
   }
 
+  // Filter requests based on department and event name
+  const filteredRequests = requests.filter((req) => {
+    const matchesDepartment = filterDepartment === "" || req.department === filterDepartment;
+    const matchesEventName = filterEventName === "" || req.eventName.toLowerCase().includes(filterEventName.toLowerCase());
+    return matchesDepartment && matchesEventName;
+  });
+
+  // Get unique departments for filter dropdown
+  const departments = [...new Set(requests.map(req => req.department))].sort();
+
   // ------------------------------------------
   // MAIN RENDER
   // ------------------------------------------
@@ -163,8 +177,55 @@ function RoleDashboard() {
 
       <hr />
 
-      {requests.length === 0 ? (
-        <p className="text-muted">No pending requests for {role}</p>
+      {/* FILTER SECTION */}
+      <div className="card shadow p-3 mb-3">
+        <div className="row g-3">
+          <div className="col-md-4">
+            <label className="form-label fw-bold">Filter by Department</label>
+            <select
+              className="form-select"
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
+            >
+              <option value="">All Departments</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-4">
+            <label className="form-label fw-bold">Filter by Event Name</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search event name..."
+              value={filterEventName}
+              onChange={(e) => setFilterEventName(e.target.value)}
+            />
+          </div>
+          <div className="col-md-4 d-flex align-items-end">
+            <button
+              className="btn btn-secondary w-100"
+              onClick={() => {
+                setFilterDepartment("");
+                setFilterEventName("");
+              }}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+        <div className="mt-2">
+          <small className="text-muted">
+            Showing {filteredRequests.length} of {requests.length} requests
+          </small>
+        </div>
+      </div>
+
+      {filteredRequests.length === 0 ? (
+        <p className="text-muted">No requests found matching the filters</p>
       ) : (
         <table className="table table-bordered shadow">
           <thead className="table-light">
@@ -180,7 +241,7 @@ function RoleDashboard() {
           </thead>
 
           <tbody>
-            {requests.map((r) => (
+            {filteredRequests.map((r) => (
               <tr key={r._id}>
                 <td>{r.eventName}</td>
                 <td>{r.staffName}</td>

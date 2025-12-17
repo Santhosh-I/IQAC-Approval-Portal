@@ -8,6 +8,8 @@ export default function AdminAllRequests() {
   const user = JSON.parse(localStorage.getItem("user"));
 
   const [requests, setRequests] = useState([]);
+  const [filterDepartment, setFilterDepartment] = useState("");
+  const [filterEventName, setFilterEventName] = useState("");
 
   useEffect(() => {
     loadRequests();
@@ -60,6 +62,16 @@ export default function AdminAllRequests() {
     }
   };
 
+  // Filter requests based on department and event name
+  const filteredRequests = requests.filter((req) => {
+    const matchesDepartment = filterDepartment === "" || req.department === filterDepartment;
+    const matchesEventName = filterEventName === "" || req.eventName.toLowerCase().includes(filterEventName.toLowerCase());
+    return matchesDepartment && matchesEventName;
+  });
+
+  // Get unique departments for filter dropdown
+  const departments = [...new Set(requests.map(req => req.department))].sort();
+
   return (
     <div className="container mt-5 pb-5">
       <h3 className="text-center mb-4">All Requests (Admin View)</h3>
@@ -81,6 +93,53 @@ export default function AdminAllRequests() {
         </button>
       </div>
 
+      {/* FILTER SECTION */}
+      <div className="card shadow p-3 mb-3">
+        <div className="row g-3">
+          <div className="col-md-4">
+            <label className="form-label fw-bold">Filter by Department</label>
+            <select
+              className="form-select"
+              value={filterDepartment}
+              onChange={(e) => setFilterDepartment(e.target.value)}
+            >
+              <option value="">All Departments</option>
+              {departments.map((dept) => (
+                <option key={dept} value={dept}>
+                  {dept}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-md-4">
+            <label className="form-label fw-bold">Filter by Event Name</label>
+            <input
+              type="text"
+              className="form-control"
+              placeholder="Search event name..."
+              value={filterEventName}
+              onChange={(e) => setFilterEventName(e.target.value)}
+            />
+          </div>
+          <div className="col-md-4 d-flex align-items-end">
+            <button
+              className="btn btn-secondary w-100"
+              onClick={() => {
+                setFilterDepartment("");
+                setFilterEventName("");
+              }}
+            >
+              Clear Filters
+            </button>
+          </div>
+        </div>
+        <div className="mt-2">
+          <small className="text-muted">
+            Showing {filteredRequests.length} of {requests.length} requests
+          </small>
+        </div>
+      </div>
+
       <div className="card shadow p-4">
         <div className="table-responsive">
           <table className="table table-bordered table-hover">
@@ -99,7 +158,7 @@ export default function AdminAllRequests() {
             </thead>
 
             <tbody>
-              {requests.length === 0 && (
+              {filteredRequests.length === 0 && (
                 <tr>
                   <td colSpan="9" className="text-center text-muted py-3">
                     No requests found
@@ -107,7 +166,7 @@ export default function AdminAllRequests() {
                 </tr>
               )}
 
-              {requests.map((req, index) => (
+              {filteredRequests.map((req, index) => (
                 <tr key={req._id}>
                   <td>{index + 1}</td>
                   <td>{req.referenceNo || "-"}</td>
