@@ -213,12 +213,63 @@ function RoleDashboard() {
             <h4>📋 Pending Requests</h4>
             <p>Requests awaiting your approval</p>
           </div>
+          
+          {/* FILTER SECTION */}
+          {requests.length > 0 && (
+            <div className="filter-section">
+              <div className="filter-row">
+                {role !== "HOD" && (
+                  <div className="filter-item">
+                    <label className="filter-label">Filter by Department</label>
+                    <select
+                      className="filter-select"
+                      value={filterDepartment}
+                      onChange={(e) => setFilterDepartment(e.target.value)}
+                    >
+                      <option value="">All Departments</option>
+                      {departments.map((dept) => (
+                        <option key={dept} value={dept}>
+                          {dept}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+                <div className={role === "HOD" ? "filter-item filter-item-wide" : "filter-item"}>
+                  <label className="filter-label">Filter by Event Name</label>
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Search event name..."
+                    value={filterEventName}
+                    onChange={(e) => setFilterEventName(e.target.value)}
+                  />
+                </div>
+                <div className="filter-item">
+                  <label className="filter-label">&nbsp;</label>
+                  <button
+                    className="btn-secondary-custom"
+                    onClick={() => {
+                      setFilterDepartment("");
+                      setFilterEventName("");
+                    }}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+              <div className="filter-info">
+                Showing {filteredRequests.length} of {requests.length} requests
+              </div>
+            </div>
+          )}
+          
           <div className="dashboard-card-body">
-            {requests.length === 0 ? (
+            {filteredRequests.length === 0 ? (
               <div className="empty-state">
-                <div className="empty-state-icon">✅</div>
-                <h4>No pending requests</h4>
-                <p>All caught up! No requests are waiting for your approval.</p>
+                <div className="empty-state-icon">🔍</div>
+                <h4>No requests found</h4>
+                <p>{requests.length === 0 ? "All caught up! No requests are waiting for your approval." : "No requests match your filter criteria."}</p>
               </div>
             ) : (
               <div className="table-responsive">
@@ -235,7 +286,7 @@ function RoleDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {requests.map((r) => (
+                    {filteredRequests.map((r) => (
                       <tr key={r._id}>
                         <td><strong>{r.eventName}</strong></td>
                         <td>{r.staffName}</td>
