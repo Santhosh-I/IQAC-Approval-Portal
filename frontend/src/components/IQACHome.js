@@ -193,7 +193,7 @@ function IQACHome() {
 
         {/* FILTER SECTION */}
         {requests.length > 0 && (
-          <div className="dashboard-card fade-in">
+          <div className="dashboard-card fade-in" style={{ marginBottom: '1.5rem' }}>
             <div className="filter-section">
               <div className="filter-row">
                 <div className="filter-item">
