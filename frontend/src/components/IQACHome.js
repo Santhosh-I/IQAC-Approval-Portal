@@ -108,9 +108,11 @@ function IQACHome() {
     }
 
     try {
-      await approveIQAC(id, {
-        referenceNo: ref,
-        workflowRoles: flow,
+      await actOnRequest(id, {
+        role: "IQAC",
+        action: "approve",
+        refNumber: ref,
+        flow: flow,
         comments: cmt,
       });
 
@@ -134,7 +136,11 @@ function IQACHome() {
     if (!cmt) return toast.error("Comments required to recreate");
 
     try {
-      await recreateRequest(id, { role, comments: cmt });
+      await actOnRequest(id, { 
+        role: "IQAC", 
+        action: "recreate", 
+        comments: cmt 
+      });
       toast.success("Request returned to staff");
       loadRequests();
     } catch (err) {
