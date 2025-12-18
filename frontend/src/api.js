@@ -172,4 +172,10 @@ export const adminDeleteAllRequests = (role) =>
     headers: { "x-user-role": role },
   });
 
+// Hash All Passwords
+export const adminHashAllPasswords = (role) =>
+  API.post(`/admin/hash-all-passwords`, {}, {
+    headers: { "x-user-role": role },
+  });
+
 export default API;

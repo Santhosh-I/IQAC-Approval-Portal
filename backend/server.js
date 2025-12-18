@@ -132,7 +132,9 @@ async function createDefaultRoles() {
   for (let r of roles) {
     const existing = await User.findOne({ role: r.role });
     if (!existing) {
-      await User.create(r);
+      // Hash the password before storing
+      const hashedPassword = await bcrypt.hash(r.password, 10);
+      await User.create({ ...r, password: hashedPassword });
       console.log(`Created default user for role: ${r.role}`);
     }
   }
@@ -372,9 +374,18 @@ app.post("/api/auth/login", async (req, res) => {
       return res.status(400).json({ error: "Role not found" });
     }
 
-    console.log(`Login attempt for ${role}: User found - ${user.name}, Password match: ${user.password === password}`);
+    // Check if password is hashed
+    let passwordMatch = false;
+    if (user.password.startsWith('$2b$') || user.password.startsWith('$2a$')) {
+      passwordMatch = await bcrypt.compare(password, user.password);
+    } else {
+      // Legacy plain text comparison (for existing accounts)
+      passwordMatch = user.password === password;
+    }
 
-    if (user.password !== password)
+    console.log(`Login attempt for ${role}: User found - ${user.name}`);
+
+    if (!passwordMatch)
       return res.status(400).json({ error: "Invalid password" });
 
     res.json({
@@ -1284,6 +1295,45 @@ app.delete("/api/admin/delete-all-requests", requireAdmin, async (req, res) => {
     res.json({ 
       message: "All requests deleted successfully", 
       deletedCount: result.deletedCount 
+    });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+//  Hash all existing plain text passwords (Admin - One-time migration)
+app.post("/api/admin/hash-all-passwords", requireAdmin, async (req, res) => {
+  try {
+    let hashedCount = 0;
+    
+    // Hash all User passwords (HOD, PRINCIPAL, DIRECTOR, AO, CEO, ADMIN, IQAC)
+    const users = await User.find({});
+    for (const user of users) {
+      // Check if password is already hashed
+      if (!user.password.startsWith('$2b$') && !user.password.startsWith('$2a$')) {
+        const hashedPassword = await bcrypt.hash(user.password, 10);
+        await User.updateOne({ _id: user._id }, { password: hashedPassword });
+        console.log(`Hashed password for ${user.role}: ${user.name}`);
+        hashedCount++;
+      }
+    }
+    
+    // Hash all Staff passwords
+    const staffs = await Staff.find({});
+    for (const staff of staffs) {
+      // Check if password is already hashed
+      if (!staff.password.startsWith('$2b$') && !staff.password.startsWith('$2a$')) {
+        const hashedPassword = await bcrypt.hash(staff.password, 10);
+        await Staff.updateOne({ _id: staff._id }, { password: hashedPassword });
+        console.log(`Hashed password for staff: ${staff.name}`);
+        hashedCount++;
+      }
+    }
+    
+    res.json({ 
+      message: "All passwords hashed successfully", 
+      hashedCount 
     });
   } catch (e) {
     console.error(e);

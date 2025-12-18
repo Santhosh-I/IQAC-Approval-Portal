@@ -232,7 +232,6 @@ export default function AdminDashboard() {
                   <tr>
                     <th>Department</th>
                     <th>HOD Name</th>
-                    <th>Password</th>
                     <th>Status</th>
                     <th>Actions</th>
                   </tr>
@@ -242,7 +241,6 @@ export default function AdminDashboard() {
                     <tr key={h.department}>
                       <td><strong>{h.department}</strong></td>
                       <td>{h.hod ? h.hod.name : "—"}</td>
-                      <td>{h.hod ? h.hod.password : "—"}</td>
                       <td>
                         {h.hod ? (
                           <span className="badge-custom badge-approved">Assigned</span>
@@ -288,7 +286,7 @@ export default function AdminDashboard() {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Department</th>
-                    <th>Password</th>
+                    {/*<th>Password</th>*/}
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -309,7 +307,7 @@ export default function AdminDashboard() {
                         <td><strong>{s.name}</strong></td>
                         <td>{s.email}</td>
                         <td><span className="badge-custom badge-processing">{s.department}</span></td>
-                        <td>{s.password}</td>
+                        {/*<td>{s.password}</td>*/}
                         <td>
                           <button
                             className="btn-warning-custom btn-sm-custom me-2"

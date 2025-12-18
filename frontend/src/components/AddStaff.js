@@ -229,7 +229,7 @@ export default function StaffManagement() {
                     <th>Name</th>
                     <th>Email</th>
                     <th>Department</th>
-                    <th>Password</th>
+                    {/*<th>Password</th>*/}
                     <th>Actions</th>
                   </tr>
                 </thead>
@@ -250,7 +250,7 @@ export default function StaffManagement() {
                         <td><strong>{s.name}</strong></td>
                         <td>{s.email}</td>
                         <td><span className="badge-custom badge-processing">{s.department}</span></td>
-                        <td>{s.password}</td>
+                        {/*<td>{s.password}</td>*/}
                         <td>
                           <button
                             className="btn-warning-custom btn-sm-custom me-2"
