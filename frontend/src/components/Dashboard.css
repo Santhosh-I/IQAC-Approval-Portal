@@ -31,7 +31,7 @@
 
 .dashboard-header-accent {
   height: 0.5rem;
-  background: linear-gradient(to right, #3b82f6, #6366f1, #8b5cf6);
+  background: linear-gradient(to right, #3b82f6, #2936cd, #1e3a8a);
 }
 
 .dashboard-header-content {
@@ -265,7 +265,7 @@
 }
 
 .dashboard-card-header {
-  background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 100%);
+  background: linear-gradient(135deg, #1e3a8a 0%, #1332ca 100%);
   padding: 1.25rem 1.5rem;
   position: relative;
 }
