@@ -25,6 +25,10 @@ function IQACHome() {
   const [comments, setComments] = useState({});
   const [refWarnings, setRefWarnings] = useState({});
   const [loading, setLoading] = useState(true);
+  
+  // Filter states
+  const [filterDepartment, setFilterDepartment] = useState("");
+  const [filterEventName, setFilterEventName] = useState("");
 
   const logout = () => {
     localStorage.removeItem("user");
@@ -187,20 +191,82 @@ function IQACHome() {
           </div>
         </div>
 
+        {/* FILTER SECTION */}
+        {requests.length > 0 && (
+          <div className="dashboard-card fade-in">
+            <div className="filter-section">
+              <div className="filter-row">
+                <div className="filter-item">
+                  <label className="filter-label">Filter by Department</label>
+                  <select
+                    className="filter-select"
+                    value={filterDepartment}
+                    onChange={(e) => setFilterDepartment(e.target.value)}
+                  >
+                    <option value="">All Departments</option>
+                    {[...new Set(requests.map(req => req.department))].sort().map((dept) => (
+                      <option key={dept} value={dept}>
+                        {dept}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="filter-item">
+                  <label className="filter-label">Filter by Event Name</label>
+                  <input
+                    type="text"
+                    className="filter-input"
+                    placeholder="Search event name..."
+                    value={filterEventName}
+                    onChange={(e) => setFilterEventName(e.target.value)}
+                  />
+                </div>
+                <div className="filter-item">
+                  <label className="filter-label">&nbsp;</label>
+                  <button
+                    className="btn-secondary-custom"
+                    onClick={() => {
+                      setFilterDepartment("");
+                      setFilterEventName("");
+                    }}
+                  >
+                    Clear Filters
+                  </button>
+                </div>
+              </div>
+              <div className="filter-info">
+                Showing {requests.filter((req) => {
+                  const matchesDepartment = filterDepartment === "" || req.department === filterDepartment;
+                  const matchesEventName = filterEventName === "" || req.eventName.toLowerCase().includes(filterEventName.toLowerCase());
+                  return matchesDepartment && matchesEventName;
+                }).length} of {requests.length} requests
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* REQUEST CARDS */}
-        {requests.length === 0 ? (
+        {requests.filter((req) => {
+          const matchesDepartment = filterDepartment === "" || req.department === filterDepartment;
+          const matchesEventName = filterEventName === "" || req.eventName.toLowerCase().includes(filterEventName.toLowerCase());
+          return matchesDepartment && matchesEventName;
+        }).length === 0 ? (
           <div className="dashboard-card fade-in">
             <div className="dashboard-card-body">
               <div className="empty-state">
-                <div className="empty-state-icon">✅</div>
-                <h4>No pending requests</h4>
-                <p>All caught up! No requests are waiting for IQAC review.</p>
+                <div className="empty-state-icon">🔍</div>
+                <h4>No requests found</h4>
+                <p>{requests.length === 0 ? "All caught up! No requests are waiting for IQAC review." : "No requests match your filter criteria."}</p>
               </div>
             </div>
           </div>
         ) : (
           <div className="row g-4">
-            {requests.map((req) => (
+            {requests.filter((req) => {
+              const matchesDepartment = filterDepartment === "" || req.department === filterDepartment;
+              const matchesEventName = filterEventName === "" || req.eventName.toLowerCase().includes(filterEventName.toLowerCase());
+              return matchesDepartment && matchesEventName;
+            }).map((req) => (
               <div className="col-md-6 col-lg-4" key={req._id}>
                 <div className="dashboard-card fade-in h-100">
                   <div className="dashboard-card-body">
