@@ -878,10 +878,16 @@ app.get("/api/requests/:id/approval-letter", async (req, res) => {
             padding: 0;
             box-sizing: border-box;
           }
+          html, body {
+            height: 100%;
+          }
           body {
             font-family: Arial, sans-serif;
             color: #333;
             padding: 20px;
+            position: relative;
+            min-height: 100vh;
+            border: 2px solid #000;
           }
           .letterhead {
             border: 2px solid #000;
@@ -963,6 +969,15 @@ app.get("/api/requests/:id/approval-letter", async (req, res) => {
             background: #ddd;
             margin: 20px 0;
           }
+          .footer {
+            text-align: right;
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            font-size: 11px;
+            color: #666;
+            font-style: italic;
+          }
         </style>
       </head>
       <body>
@@ -1004,6 +1019,10 @@ app.get("/api/requests/:id/approval-letter", async (req, res) => {
               ${rows}
             </tbody>
           </table>
+          
+          <div class="footer">
+            Powered by IPS Tech Community
+          </div>
         </div>
       </body>
       </html>
@@ -1013,7 +1032,7 @@ app.get("/api/requests/:id/approval-letter", async (req, res) => {
     const file = { content: htmlContent };
     const options = { 
       format: 'A4',
-      margin: { top: '20px', right: '20px', bottom: '20px', left: '20px' }
+      margin: { top: '40px', right: '40px', bottom: '40px', left: '40px' }
     };
 
     const pdfBuffer = await htmlPdf.generatePdf(file, options);
